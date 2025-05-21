@@ -50,14 +50,22 @@ export default async function ProviderServicesPage() {
 
   // Convert servicesData to Service type with category
   const services = servicesData?.map(serviceData => {
-    // Create a properly-typed service with converted dates
+    // Create a properly-typed service by mapping fields directly
     const service: Service & { category?: Category } = {
-      ...serviceData,
+      id: serviceData.id,
+      providerId: serviceData.providerId,
+      title: serviceData.title,
+      description: serviceData.description,
+      price: serviceData.price,
+      duration: serviceData.duration,
+      isActive: serviceData.isActive,
+      isPrivate: serviceData.isPrivate,
+      categoryId: serviceData.categoryId,
       createdAt: new Date(serviceData.createdAt),
       updatedAt: new Date(serviceData.updatedAt),
     };
     
-    // Add the category if it exists, converting null values to undefined
+    // Add the category if it exists, mapping fields directly
     if (serviceData.category) {
       const categoryData = serviceData.category;
       service.category = {
