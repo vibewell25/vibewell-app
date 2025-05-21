@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { ServiceForm } from "@/components/services/service-form";
-import { UserRole } from "@vibewell/types";
+import { UserRole, Profile, Service } from "@vibewell/types";
 import { createServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -19,33 +19,57 @@ interface EditServicePageProps {
 
 export default async function EditServicePage(props: EditServicePageProps) {
   const params = await props.params;
-  const profile = await getCurrentProfile();
+  const profileData = await getCurrentProfile();
 
-  if (!profile) {
+  if (!profileData) {
     notFound();
   }
 
   // Redirect if user is not a provider
-  if (profile.role !== UserRole.PROVIDER && profile.role !== UserRole.ADMIN) {
+  if (profileData.role !== UserRole.PROVIDER && profileData.role !== UserRole.ADMIN) {
     redirect("/dashboard");
   }
 
+  // Convert profileData to Profile type
+  const profile: Profile = {
+    ...profileData,
+    role: profileData.role as UserRole,
+    createdAt: new Date(profileData.createdAt),
+    updatedAt: new Date(profileData.updatedAt),
+    displayName: profileData.displayName || undefined,
+    bio: profileData.bio || undefined,
+    avatarUrl: profileData.avatarUrl || undefined,
+    phone: profileData.phone || undefined,
+    address: profileData.address || undefined,
+    city: profileData.city || undefined,
+    state: profileData.state || undefined,
+    zipCode: profileData.zipCode || undefined,
+    country: profileData.country || undefined,
+  };
+
   // Fetch service
   const supabase = createServerClient();
-  const { data: service } = await supabase
+  const { data: serviceData } = await supabase
     .from("services")
     .select("*")
     .eq("id", params.id)
     .single();
 
-  if (!service) {
+  if (!serviceData) {
     notFound();
   }
 
   // Check if user owns the service
-  if (service.providerId !== profile.id && profile.role !== UserRole.ADMIN) {
+  if (serviceData.providerId !== profile.id && profile.role !== UserRole.ADMIN) {
     redirect("/provider/services");
   }
+
+  // Convert serviceData to Service type
+  const service: Service = {
+    ...serviceData,
+    createdAt: new Date(serviceData.createdAt),
+    updatedAt: new Date(serviceData.updatedAt),
+  };
 
   return (
     <div className="container py-10">
