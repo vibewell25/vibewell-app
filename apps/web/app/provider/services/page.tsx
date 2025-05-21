@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { ServiceCard } from "@/components/services/service-card";
-import { UserRole } from "@vibewell/types";
+import { UserRole, Profile, Service, Category } from "@vibewell/types";
 import { createServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -12,24 +12,56 @@ export const metadata: Metadata = {
 };
 
 export default async function ProviderServicesPage() {
-  const profile = await getCurrentProfile();
+  const profileData = await getCurrentProfile();
 
-  if (!profile) {
+  if (!profileData) {
     notFound();
   }
 
   // Redirect if user is not a provider
-  if (profile.role !== UserRole.PROVIDER && profile.role !== UserRole.ADMIN) {
+  if (profileData.role !== UserRole.PROVIDER && profileData.role !== UserRole.ADMIN) {
     redirect("/dashboard");
   }
 
+  // Convert profileData to Profile type
+  const profile: Profile = {
+    ...profileData,
+    role: profileData.role as UserRole,
+    createdAt: new Date(profileData.createdAt),
+    updatedAt: new Date(profileData.updatedAt),
+    displayName: profileData.displayName || undefined,
+    bio: profileData.bio || undefined,
+    avatarUrl: profileData.avatarUrl || undefined,
+    phone: profileData.phone || undefined,
+    address: profileData.address || undefined,
+    city: profileData.city || undefined,
+    state: profileData.state || undefined,
+    zipCode: profileData.zipCode || undefined,
+    country: profileData.country || undefined,
+  };
+
   // Fetch services
   const supabase = createServerClient();
-  const { data: services } = await supabase
+  const { data: servicesData } = await supabase
     .from("services")
     .select("*, category:categories(*)")
     .eq("providerId", profile.id)
     .order("createdAt", { ascending: false });
+
+  // Convert servicesData to Service type with category
+  const services = servicesData?.map(serviceData => {
+    const service: Service & { category?: Category } = {
+      ...serviceData,
+      createdAt: new Date(serviceData.createdAt),
+      updatedAt: new Date(serviceData.updatedAt),
+      category: serviceData.category ? {
+        ...serviceData.category,
+        createdAt: new Date(serviceData.category.createdAt),
+        updatedAt: new Date(serviceData.category.updatedAt),
+      } : undefined
+    };
+    return service;
+  }) || [];
 
   return (
     <div className="container py-10">
