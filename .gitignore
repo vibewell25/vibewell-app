@@ -51,4 +51,17 @@ next-env.d.ts
 
 # Logs
 logs
-*.log 
+*.log
+
+# Temporary files
+/temp
+/tmp
+
+# Supabase
+.supabase
+
+# Prisma
+.prisma/client
+
+# Storybook
+/storybook-static 
