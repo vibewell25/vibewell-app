@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { createServerClient } from "@/lib/supabase/server";
 import { ServiceCard } from "@/components/services/service-card";
+import { Service, Category } from "@vibewell/types";
 
 export const metadata: Metadata = {
   title: "Services | VibeWell",
@@ -10,11 +11,44 @@ export const metadata: Metadata = {
 export default async function ServicesPage() {
   // Fetch all active services with their categories
   const supabase = createServerClient();
-  const { data: services } = await supabase
+  const { data: servicesData } = await supabase
     .from("services")
     .select("*, category:categories(*)")
     .eq("isActive", true)
     .order("createdAt", { ascending: false });
+
+  // Convert services data to proper Service type with Date objects
+  const services = servicesData?.map(serviceData => {
+    // Create a properly-typed service
+    const service: Service & { category?: Category } = {
+      id: serviceData.id,
+      providerId: serviceData.providerId,
+      title: serviceData.title,
+      description: serviceData.description,
+      price: serviceData.price,
+      duration: serviceData.duration,
+      isActive: serviceData.isActive,
+      isPrivate: serviceData.isPrivate,
+      categoryId: serviceData.categoryId,
+      createdAt: new Date(serviceData.createdAt),
+      updatedAt: new Date(serviceData.updatedAt),
+    };
+    
+    // Add the category if it exists, mapping fields correctly
+    if (serviceData.category) {
+      const categoryData = serviceData.category;
+      service.category = {
+        id: categoryData.id,
+        name: categoryData.name,
+        description: categoryData.description ?? undefined,
+        icon: categoryData.iconUrl ?? undefined,
+        createdAt: new Date(categoryData.createdAt),
+        updatedAt: new Date(categoryData.updatedAt),
+      };
+    }
+    
+    return service;
+  }) || [];
 
   // Fetch all categories for filters
   const { data: categories } = await supabase

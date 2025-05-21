@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { ReviewForm } from "@/components/reviews/review-form";
-import { BookingStatus } from "@vibewell/types";
+import { BookingStatus, UserRole } from "@vibewell/types";
 
 interface ReviewPageProps {
   params: Promise<{
@@ -37,25 +37,64 @@ export async function generateMetadata(props: ReviewPageProps): Promise<Metadata
 export default async function ReviewPage(props: ReviewPageProps) {
   const params = await props.params;
   const supabase = createServerClient();
-  const profile = await getCurrentProfile();
+  const profileData = await getCurrentProfile();
 
-  if (!profile) {
+  if (!profileData) {
     redirect(`/auth/login?redirectTo=/services/${params.id}/review`);
   }
 
+  // Convert profileData to Profile type
+  const profile = {
+    ...profileData,
+    role: profileData.role as UserRole,
+    createdAt: new Date(profileData.createdAt),
+    updatedAt: new Date(profileData.updatedAt),
+    displayName: profileData.displayName || undefined,
+    bio: profileData.bio || undefined,
+    avatarUrl: profileData.avatarUrl || undefined,
+    phone: profileData.phone || undefined,
+    address: profileData.address || undefined,
+    city: profileData.city || undefined,
+    state: profileData.state || undefined,
+    zipCode: profileData.zipCode || undefined,
+    country: profileData.country || undefined,
+  };
+
   // Fetch service details
-  const { data: service } = await supabase
+  const { data: serviceData } = await supabase
     .from("services")
     .select("*, provider:profiles(*)")
     .eq("id", params.id)
     .single();
 
-  if (!service) {
+  if (!serviceData) {
     notFound();
   }
 
+  // Convert service data to proper Service type with Date objects
+  const service = {
+    ...serviceData,
+    createdAt: new Date(serviceData.createdAt),
+    updatedAt: new Date(serviceData.updatedAt),
+    provider: serviceData.provider ? {
+      ...serviceData.provider,
+      role: serviceData.provider.role as UserRole,
+      createdAt: new Date(serviceData.provider.createdAt),
+      updatedAt: new Date(serviceData.provider.updatedAt),
+      displayName: serviceData.provider.displayName || undefined,
+      bio: serviceData.provider.bio || undefined,
+      avatarUrl: serviceData.provider.avatarUrl || undefined,
+      phone: serviceData.provider.phone || undefined,
+      address: serviceData.provider.address || undefined,
+      city: serviceData.provider.city || undefined,
+      state: serviceData.provider.state || undefined,
+      zipCode: serviceData.provider.zipCode || undefined,
+      country: serviceData.provider.country || undefined,
+    } : undefined,
+  };
+
   // Verify the user has a completed booking for this service
-  const { data: booking } = await supabase
+  const { data: bookingData } = await supabase
     .from("bookings")
     .select("*")
     .eq("customerId", profile.id)
@@ -67,9 +106,23 @@ export default async function ReviewPage(props: ReviewPageProps) {
     .single();
 
   // If no completed booking found, redirect to service page
-  if (!booking) {
+  if (!bookingData) {
     redirect(`/services/${params.id}?error=no_completed_booking`);
   }
+
+  // Convert booking data to proper Booking type with Date objects
+  const booking = {
+    ...bookingData,
+    status: bookingData.status as BookingStatus,
+    startTime: new Date(bookingData.startTime),
+    endTime: new Date(bookingData.endTime),
+    createdAt: new Date(bookingData.createdAt),
+    updatedAt: new Date(bookingData.updatedAt),
+    notes: bookingData.notes || undefined,
+    cancellationReason: bookingData.cancellationReason || undefined,
+    cancellationNotes: bookingData.cancellationNotes || undefined,
+    cancellationFee: bookingData.cancellationFee || undefined,
+  };
 
   // Check if the user has already left a review for this booking
   const { data: existingReview } = await supabase
@@ -126,8 +179,8 @@ export default async function ReviewPage(props: ReviewPageProps) {
               <div>
                 <h2 className="font-medium text-lg">{service.title}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {service.provider.displayName || 
-                    `${service.provider.firstName} ${service.provider.lastName}`}
+                  {service.provider?.displayName || 
+                    (service.provider ? `${service.provider.firstName} ${service.provider.lastName}` : 'Unknown Provider')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Appointment date: {new Date(booking.startTime).toLocaleDateString()}

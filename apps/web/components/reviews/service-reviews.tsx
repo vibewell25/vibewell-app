@@ -31,9 +31,9 @@ export function ServiceReviews({ reviews, summary, serviceId, showReviewForm = t
   }, [reviews, activeTab]);
 
   // Format date for display
-  const formatReviewDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
+  const formatReviewDate = (date: Date | string): string => {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return dateObj.toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'long', 
       day: 'numeric' 
@@ -45,12 +45,12 @@ export function ServiceReviews({ reviews, summary, serviceId, showReviewForm = t
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Customer Reviews</h2>
         {showReviewForm && (
-          <Link
+          <a
             href={`/services/${serviceId}/review`}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
           >
             Write a Review
-          </Link>
+          </a>
         )}
       </div>
       
@@ -252,12 +252,12 @@ export function ServiceReviews({ reviews, summary, serviceId, showReviewForm = t
             Be the first to share your experience with this service.
           </p>
           {showReviewForm && (
-            <Link
+            <a
               href={`/services/${serviceId}/review`}
               className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
             >
               Write a Review
-            </Link>
+            </a>
           )}
         </div>
       )}

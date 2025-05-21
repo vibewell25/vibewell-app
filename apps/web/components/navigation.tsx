@@ -56,7 +56,17 @@ export function Navigation() {
             .eq("userId", user.id)
             .single();
 
-          setProfile(data);
+          if (data) {
+            // Convert data to proper Profile type
+            setProfile({
+              id: data.id,
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email,
+              role: data.role as UserRole,
+              avatarUrl: data.avatarUrl,
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching user:", error);

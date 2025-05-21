@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { ServiceReviews } from "@/components/reviews/service-reviews";
+import { Review, ReviewSummary } from "@vibewell/types";
+import { UserRole } from "@vibewell/types";
 
 interface ServicePageProps {
   params: Promise<{
@@ -57,7 +59,7 @@ export default async function ServicePage(props: ServicePageProps) {
   const isProvider = profile?.id === service.provider.id;
 
   // Fetch reviews for this service (public only)
-  const { data: reviews } = await supabase
+  const { data: reviewsData } = await supabase
     .from("reviews")
     .select(`
       *,
@@ -66,6 +68,30 @@ export default async function ServicePage(props: ServicePageProps) {
     .eq("serviceId", params.id)
     .eq("isPublic", true)
     .order("createdAt", { ascending: false });
+
+  // Convert reviewsData to proper Review type
+  const reviews: Review[] = reviewsData?.map(reviewData => ({
+    id: reviewData.id,
+    bookingId: reviewData.bookingId,
+    customerId: reviewData.customerId,
+    providerId: reviewData.providerId,
+    serviceId: reviewData.serviceId,
+    rating: reviewData.rating,
+    comment: reviewData.comment,
+    isPublic: reviewData.isPublic,
+    createdAt: new Date(reviewData.createdAt),
+    updatedAt: new Date(reviewData.updatedAt),
+    customer: reviewData.customer ? {
+      ...reviewData.customer,
+      userId: '', // We don't have this data from the query, but it's required by the Profile type
+      email: '', // We don't have this data from the query, but it's required by the Profile type
+      role: UserRole.CUSTOMER, // Default role, but we don't have this from the query
+      createdAt: new Date(), // We don't have this data from the query
+      updatedAt: new Date(), // We don't have this data from the query
+      displayName: reviewData.customer.displayName || undefined,
+      avatarUrl: reviewData.customer.avatarUrl || undefined,
+    } : undefined,
+  })) || [];
 
   // Get review summary
   const { data: countData } = await supabase
@@ -77,7 +103,7 @@ export default async function ServicePage(props: ServicePageProps) {
   // Calculate average rating and ratings distribution
   const totalReviews = reviews?.length || 0;
   const averageRating = totalReviews > 0 
-    ? reviews!.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
     : 0;
 
   // Count reviews by rating
@@ -97,7 +123,7 @@ export default async function ServicePage(props: ServicePageProps) {
     });
   }
 
-  const reviewSummary = {
+  const reviewSummary: ReviewSummary = {
     serviceId: params.id,
     providerId: service.providerId,
     averageRating,
@@ -211,7 +237,7 @@ export default async function ServicePage(props: ServicePageProps) {
 
           <div className="mt-8 rounded-lg border bg-card p-6">
             <ServiceReviews 
-              reviews={reviews || []} 
+              reviews={reviews} 
               summary={reviewSummary}
               serviceId={params.id}
               showReviewForm={!isProvider}

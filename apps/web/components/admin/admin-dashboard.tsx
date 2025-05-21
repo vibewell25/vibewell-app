@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Avatar } from "@vibewell/ui";
 import { Profile } from "@vibewell/types";
 
 interface AdminDashboardProps {

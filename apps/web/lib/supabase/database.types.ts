@@ -27,7 +27,7 @@ export interface Database {
           state: string | null
           zipCode: string | null
           country: string | null
-          role: UserRole
+          role: Database['public']['Enums']['UserRole']
           createdAt: string
           updatedAt: string
         }
@@ -46,7 +46,7 @@ export interface Database {
           state?: string | null
           zipCode?: string | null
           country?: string | null
-          role?: UserRole
+          role?: Database['public']['Enums']['UserRole']
           createdAt?: string
           updatedAt?: string
         }
@@ -65,7 +65,7 @@ export interface Database {
           state?: string | null
           zipCode?: string | null
           country?: string | null
-          role?: UserRole
+          role?: Database['public']['Enums']['UserRole']
           createdAt?: string
           updatedAt?: string
         }
@@ -73,6 +73,7 @@ export interface Database {
           {
             foreignKeyName: "profiles_userId_fkey"
             columns: ["userId"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
@@ -87,8 +88,8 @@ export interface Database {
           price: number
           duration: number
           isActive: boolean
-          categoryId: string
           isPrivate: boolean
+          categoryId: string
           createdAt: string
           updatedAt: string
         }
@@ -100,8 +101,8 @@ export interface Database {
           price: number
           duration: number
           isActive?: boolean
-          categoryId: string
           isPrivate?: boolean
+          categoryId: string
           createdAt?: string
           updatedAt?: string
         }
@@ -113,8 +114,8 @@ export interface Database {
           price?: number
           duration?: number
           isActive?: boolean
-          categoryId?: string
           isPrivate?: boolean
+          categoryId?: string
           createdAt?: string
           updatedAt?: string
         }
@@ -122,12 +123,14 @@ export interface Database {
           {
             foreignKeyName: "services_providerId_fkey"
             columns: ["providerId"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "services_categoryId_fkey"
             columns: ["categoryId"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
           }
@@ -168,12 +171,13 @@ export interface Database {
           serviceId: string
           startTime: string
           endTime: string
-          status: BookingStatus
+          status: Database['public']['Enums']['BookingStatus']
           notes: string | null
           price: number
           cancellationReason: string | null
           cancellationNotes: string | null
           cancellationFee: number | null
+          hasReview: boolean
           createdAt: string
           updatedAt: string
         }
@@ -184,12 +188,13 @@ export interface Database {
           serviceId: string
           startTime: string
           endTime: string
-          status?: BookingStatus
+          status?: Database['public']['Enums']['BookingStatus']
           notes?: string | null
           price: number
           cancellationReason?: string | null
           cancellationNotes?: string | null
           cancellationFee?: number | null
+          hasReview?: boolean
           createdAt?: string
           updatedAt?: string
         }
@@ -200,7 +205,7 @@ export interface Database {
           serviceId?: string
           startTime?: string
           endTime?: string
-          status?: BookingStatus
+          status?: Database['public']['Enums']['BookingStatus']
           notes?: string | null
           price?: number
           cancellationReason?: string | null
@@ -214,18 +219,21 @@ export interface Database {
           {
             foreignKeyName: "bookings_customerId_fkey"
             columns: ["customerId"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bookings_providerId_fkey"
             columns: ["providerId"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bookings_serviceId_fkey"
             columns: ["serviceId"]
+            isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
           }
@@ -272,24 +280,28 @@ export interface Database {
           {
             foreignKeyName: "reviews_bookingId_fkey"
             columns: ["bookingId"]
+            isOneToOne: false
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reviews_customerId_fkey"
             columns: ["customerId"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reviews_providerId_fkey"
             columns: ["providerId"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reviews_serviceId_fkey"
             columns: ["serviceId"]
+            isOneToOne: false
             referencedRelation: "services"
             referencedColumns: ["id"]
           }
@@ -303,10 +315,21 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      booking_status: BookingStatus
-      loyalty_tier: LoyaltyTier
-      order_status: OrderStatus
-      user_role: UserRole
+      UserRole: 'ADMIN' | 'PROVIDER' | 'CUSTOMER'
+      BookingStatus: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+      OrderStatus: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED'
+      LoyaltyTier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM'
     }
   }
-} 
+}
+
+export type DbUserRole = Database['public']['Enums']['UserRole']
+export type DbBookingStatus = Database['public']['Enums']['BookingStatus']
+export type DbOrderStatus = Database['public']['Enums']['OrderStatus']
+export type DbLoyaltyTier = Database['public']['Enums']['LoyaltyTier']
+
+export type Profile = Database['public']['Tables']['profiles']['Row']
+export type Category = Database['public']['Tables']['categories']['Row']
+export type Service = Database['public']['Tables']['services']['Row']
+export type Booking = Database['public']['Tables']['bookings']['Row']
+export type Review = Database['public']['Tables']['reviews']['Row'] 
