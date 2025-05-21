@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { BookingForm } from "@/components/services/booking-form";
-import { UserRole } from "@vibewell/types";
+import { UserRole, Profile, Service } from "@vibewell/types";
 
 interface BookingPageProps {
   params: Promise<{
@@ -37,12 +37,29 @@ export async function generateMetadata(props: BookingPageProps): Promise<Metadat
 export default async function BookingPage(props: BookingPageProps) {
   const params = await props.params;
   const supabase = createServerClient();
-  const profile = await getCurrentProfile();
+  const profileData = await getCurrentProfile();
 
   // Redirect to login if not authenticated
-  if (!profile) {
+  if (!profileData) {
     redirect(`/auth/login?redirectTo=/services/${params.id}/book`);
   }
+
+  // Convert profileData to Profile type
+  const profile: Profile = {
+    ...profileData,
+    role: profileData.role as UserRole,
+    createdAt: new Date(profileData.createdAt),
+    updatedAt: new Date(profileData.updatedAt),
+    displayName: profileData.displayName || undefined,
+    bio: profileData.bio || undefined,
+    avatarUrl: profileData.avatarUrl || undefined,
+    phone: profileData.phone || undefined,
+    address: profileData.address || undefined,
+    city: profileData.city || undefined,
+    state: profileData.state || undefined,
+    zipCode: profileData.zipCode || undefined,
+    country: profileData.country || undefined,
+  };
 
   // Redirect if user is a provider (can't book their own services)
   if (profile.role === UserRole.PROVIDER) {
@@ -50,15 +67,31 @@ export default async function BookingPage(props: BookingPageProps) {
   }
 
   // Fetch service with its details
-  const { data: service } = await supabase
+  const { data: serviceData } = await supabase
     .from("services")
     .select(`*, provider:profiles(id, firstName, lastName, displayName, avatarUrl)`)
     .eq("id", params.id)
     .single();
 
-  if (!service) {
+  if (!serviceData) {
     notFound();
   }
+
+  // Convert serviceData to Service type with provider
+  const service: Service & { provider: any } = {
+    id: serviceData.id,
+    providerId: serviceData.providerId,
+    title: serviceData.title,
+    description: serviceData.description,
+    price: serviceData.price,
+    duration: serviceData.duration,
+    isActive: serviceData.isActive,
+    isPrivate: serviceData.isPrivate,
+    categoryId: serviceData.categoryId,
+    createdAt: new Date(serviceData.createdAt),
+    updatedAt: new Date(serviceData.updatedAt),
+    provider: serviceData.provider,
+  };
 
   return (
     <div className="container py-10">
