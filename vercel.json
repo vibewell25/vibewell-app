@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "buildCommand": "./vercel-build.sh",
+  "installCommand": "echo 'Using custom build script instead'",
+  "framework": "nextjs",
+  "outputDirectory": "apps/web/.next",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
+} 
