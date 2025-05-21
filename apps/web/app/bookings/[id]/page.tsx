@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { formatDate, formatTime, formatCurrency } from "@vibewell/utils";
-import { BookingStatus } from "@vibewell/types";
+import { BookingStatus, Profile, UserRole } from "@vibewell/types";
 
 type ParamsType = Promise<{ id: string }>;
 
@@ -19,14 +19,31 @@ export async function generateMetadata({ params }: { params: ParamsType }): Prom
 export default async function BookingDetailsPage({ params }: { params: ParamsType }) {
   const { id } = await params;
   const supabase = createServerClient();
-  const profile = await getCurrentProfile();
+  const profileData = await getCurrentProfile();
 
-  if (!profile) {
+  if (!profileData) {
     redirect(`/auth/login?redirectTo=/bookings/${id}`);
   }
 
+  // Convert profileData to Profile type
+  const profile: Profile = {
+    ...profileData,
+    role: profileData.role as UserRole,
+    createdAt: new Date(profileData.createdAt),
+    updatedAt: new Date(profileData.updatedAt),
+    displayName: profileData.displayName || undefined,
+    bio: profileData.bio || undefined,
+    avatarUrl: profileData.avatarUrl || undefined,
+    phone: profileData.phone || undefined,
+    address: profileData.address || undefined,
+    city: profileData.city || undefined,
+    state: profileData.state || undefined,
+    zipCode: profileData.zipCode || undefined,
+    country: profileData.country || undefined,
+  };
+
   // Fetch booking with related service and provider details
-  const { data: booking } = await supabase
+  const { data: bookingData } = await supabase
     .from("bookings")
     .select(`
       *,
@@ -37,12 +54,27 @@ export default async function BookingDetailsPage({ params }: { params: ParamsTyp
     .eq("customerId", profile.id)
     .single();
 
-  if (!booking) {
+  if (!bookingData) {
     notFound();
   }
 
-  const startTime = new Date(booking.startTime);
-  const endTime = new Date(booking.endTime);
+  // Convert to proper Booking type with status as enum
+  const booking = {
+    ...bookingData,
+    status: bookingData.status as BookingStatus,
+    createdAt: new Date(bookingData.createdAt),
+    updatedAt: new Date(bookingData.updatedAt),
+    startTime: new Date(bookingData.startTime),
+    endTime: new Date(bookingData.endTime),
+    service: {
+      ...bookingData.service,
+      createdAt: new Date(bookingData.service.createdAt),
+      updatedAt: new Date(bookingData.service.updatedAt),
+    }
+  };
+
+  const startTime = booking.startTime;
+  const endTime = booking.endTime;
   
   // Check if booking can be cancelled (not past, not already cancelled)
   const canCancel = 
@@ -111,7 +143,7 @@ export default async function BookingDetailsPage({ params }: { params: ParamsTyp
                 <div>
                   <h1 className="text-2xl font-bold">Booking #{booking.id.substring(0, 8)}</h1>
                   <p className="text-muted-foreground">
-                    Created on {formatDate(new Date(booking.createdAt))}
+                    Created on {formatDate(booking.createdAt)}
                   </p>
                 </div>
                 <div>
