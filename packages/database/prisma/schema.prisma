@@ -1,0 +1,282 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["auth", "public"]
+}
+
+// Core User and Profile Models
+model Profile {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  email         String    @unique
+  firstName     String
+  lastName      String
+  displayName   String?
+  bio           String?
+  avatarUrl     String?
+  phone         String?
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  country       String?
+  role          UserRole  @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  posts         Post[]
+  services      Service[]  @relation("ServiceProvider")
+  bookings      Booking[]  @relation("CustomerBookings")
+  providedBookings Booking[] @relation("ProviderBookings")
+  reviews       Review[]   @relation("ReviewAuthor")
+  receivedReviews Review[] @relation("ReviewSubject")
+  products      Product[]
+  loyaltyPoints LoyaltyPoints?
+  messages      Message[]
+  orders        Order[]
+  
+  @@map("profiles")
+  @@schema("public")
+}
+
+enum UserRole {
+  ADMIN
+  PROVIDER
+  CUSTOMER
+}
+
+// Service Management
+model Service {
+  id          String   @id @default(uuid())
+  providerId  String
+  provider    Profile  @relation("ServiceProvider", fields: [providerId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  duration    Int      // Duration in minutes
+  isActive    Boolean  @default(true)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  bookings    Booking[]
+  reviews     Review[]
+
+  @@index([providerId])
+  @@index([categoryId])
+  @@map("services")
+  @@schema("public")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  iconUrl     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  services    Service[]
+
+  @@map("categories")
+  @@schema("public")
+}
+
+// Booking System
+model Booking {
+  id          String          @id @default(uuid())
+  customerId  String
+  customer    Profile         @relation("CustomerBookings", fields: [customerId], references: [id], onDelete: Cascade)
+  providerId  String
+  provider    Profile         @relation("ProviderBookings", fields: [providerId], references: [id], onDelete: Cascade)
+  serviceId   String
+  service     Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  startTime   DateTime
+  endTime     DateTime
+  status      BookingStatus   @default(PENDING)
+  notes       String?
+  price       Decimal         @db.Decimal(10, 2)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([customerId])
+  @@index([providerId])
+  @@index([serviceId])
+  @@map("bookings")
+  @@schema("public")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// Review System
+model Review {
+  id          String   @id @default(uuid())
+  authorId    String
+  author      Profile  @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  subjectId   String
+  subject     Profile  @relation("ReviewSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  rating      Int      @db.SmallInt
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([subjectId])
+  @@index([serviceId])
+  @@map("reviews")
+  @@schema("public")
+}
+
+// Social Features
+model Post {
+  id          String   @id @default(uuid())
+  authorId    String
+  author      Profile  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content     String
+  imageUrl    String?
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  comments    Comment[]
+
+  @@index([authorId])
+  @@map("posts")
+  @@schema("public")
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId    String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([postId])
+  @@map("comments")
+  @@schema("public")
+}
+
+// E-Commerce Features
+model Product {
+  id          String   @id @default(uuid())
+  providerId  String
+  provider    Profile  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  name        String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  inventory   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  orderItems  OrderItem[]
+
+  @@index([providerId])
+  @@map("products")
+  @@schema("public")
+}
+
+model Order {
+  id          String     @id @default(uuid())
+  customerId  String
+  customer    Profile    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status      OrderStatus @default(PENDING)
+  total       Decimal    @db.Decimal(10, 2)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  orderItems  OrderItem[]
+
+  @@index([customerId])
+  @@map("orders")
+  @@schema("public")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity    Int
+  price       Decimal  @db.Decimal(10, 2)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+  @@schema("public")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+// Loyalty System
+model LoyaltyPoints {
+  id          String   @id @default(uuid())
+  profileId   String   @unique
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  points      Int      @default(0)
+  tier        LoyaltyTier @default(BRONZE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("loyalty_points")
+  @@schema("public")
+}
+
+enum LoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+// Messaging System
+model Message {
+  id          String   @id @default(uuid())
+  senderId    String
+  sender      Profile  @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  content     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([senderId])
+  @@map("messages")
+  @@schema("public")
+} 

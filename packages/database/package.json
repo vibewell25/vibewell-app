@@ -1,0 +1,25 @@
+{
+  "name": "@vibewell/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:reset": "prisma migrate reset",
+    "studio": "prisma studio",
+    "clean": "rm -rf node_modules && rm -rf generated"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.7.0",
+    "@vibewell/types": "workspace:*"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0",
+    "prisma": "^5.7.0",
+    "typescript": "^5.3.3"
+  }
+} 

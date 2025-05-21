@@ -1,0 +1,73 @@
+import { Metadata } from "next";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { getCurrentProfile } from "@/lib/supabase/server";
+import { ServiceForm } from "@/components/services/service-form";
+import { UserRole } from "@vibewell/types";
+import { createServerClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Edit Service | VibeWell",
+  description: "Edit your service offering",
+};
+
+interface EditServicePageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default async function EditServicePage({ params }: EditServicePageProps) {
+  const profile = await getCurrentProfile();
+
+  if (!profile) {
+    notFound();
+  }
+
+  // Redirect if user is not a provider
+  if (profile.role !== UserRole.PROVIDER && profile.role !== UserRole.ADMIN) {
+    redirect("/dashboard");
+  }
+
+  // Fetch service
+  const supabase = createServerClient();
+  const { data: service } = await supabase
+    .from("services")
+    .select("*")
+    .eq("id", params.id)
+    .single();
+
+  if (!service) {
+    notFound();
+  }
+
+  // Check if user owns the service
+  if (service.providerId !== profile.id && profile.role !== UserRole.ADMIN) {
+    redirect("/provider/services");
+  }
+
+  return (
+    <div className="container py-10">
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Edit Service</h1>
+            <p className="text-muted-foreground">
+              Update your service details
+            </p>
+          </div>
+          <Link
+            href="/provider/services"
+            className="rounded-md bg-secondary px-4 py-2 text-secondary-foreground shadow hover:bg-secondary/90"
+          >
+            Cancel
+          </Link>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 shadow-sm">
+        <ServiceForm initialData={service} providerId={profile.id} />
+      </div>
+    </div>
+  );
+} 
