@@ -7,23 +7,23 @@ import { formatDate, formatTime } from "@vibewell/utils";
 import { BookingCancellationForm } from "@/components/bookings/booking-cancellation-form";
 import { BookingStatus } from "@vibewell/types";
 
-interface BookingCancellationPageProps {
-  params: {
-    id: string;
+type ParamsType = Promise<{ id: string }>;
+
+export async function generateMetadata({ params }: { params: ParamsType }): Promise<Metadata> {
+  const { id } = await params;
+  return {
+    title: "Cancel Booking | VibeWell",
+    description: "Cancel your booking",
   };
 }
 
-export const metadata: Metadata = {
-  title: "Cancel Booking | VibeWell",
-  description: "Cancel your booking",
-};
-
-export default async function BookingCancellationPage({ params }: BookingCancellationPageProps) {
+export default async function BookingCancellationPage({ params }: { params: ParamsType }) {
+  const { id } = await params;
   const supabase = createServerClient();
   const profile = await getCurrentProfile();
 
   if (!profile) {
-    redirect(`/auth/login?redirectTo=/bookings/${params.id}/cancel`);
+    redirect(`/auth/login?redirectTo=/bookings/${id}/cancel`);
   }
 
   // Fetch booking with related service and provider details
@@ -34,7 +34,7 @@ export default async function BookingCancellationPage({ params }: BookingCancell
       service:services(*),
       provider:profiles!bookings_providerId_fkey(id, firstName, lastName, displayName, avatarUrl)
     `)
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("customerId", profile.id)
     .single();
 

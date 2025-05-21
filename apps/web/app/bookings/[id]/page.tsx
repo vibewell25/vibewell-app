@@ -6,25 +6,23 @@ import { getCurrentProfile } from "@/lib/supabase/server";
 import { formatDate, formatTime, formatCurrency } from "@vibewell/utils";
 import { BookingStatus } from "@vibewell/types";
 
-interface BookingDetailsPageProps {
-  params: {
-    id: string;
-  };
-}
+type ParamsType = Promise<{ id: string }>;
 
-export async function generateMetadata({ params }: BookingDetailsPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: ParamsType }): Promise<Metadata> {
+  const { id } = await params;
   return {
     title: "Booking Details | VibeWell",
     description: "View details of your booking",
   };
 }
 
-export default async function BookingDetailsPage({ params }: BookingDetailsPageProps) {
+export default async function BookingDetailsPage({ params }: { params: ParamsType }) {
+  const { id } = await params;
   const supabase = createServerClient();
   const profile = await getCurrentProfile();
 
   if (!profile) {
-    redirect(`/auth/login?redirectTo=/bookings/${params.id}`);
+    redirect(`/auth/login?redirectTo=/bookings/${id}`);
   }
 
   // Fetch booking with related service and provider details
@@ -35,7 +33,7 @@ export default async function BookingDetailsPage({ params }: BookingDetailsPageP
       service:services(*),
       provider:profiles!bookings_providerId_fkey(id, firstName, lastName, displayName, avatarUrl, phone, email)
     `)
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("customerId", profile.id)
     .single();
 
