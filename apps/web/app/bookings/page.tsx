@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { BookingsList } from "@/components/bookings/bookings-list";
 import { redirect } from "next/navigation";
+import { BookingStatus } from "@vibewell/types";
 
 export const metadata: Metadata = {
   title: "Your Bookings | VibeWell",
@@ -19,7 +20,7 @@ export default async function BookingsPage() {
   }
 
   // Fetch all bookings for the current user with related service and provider details
-  const { data: bookings } = await supabase
+  const { data: rawBookings } = await supabase
     .from("bookings")
     .select(`
       *,
@@ -29,6 +30,12 @@ export default async function BookingsPage() {
     .eq("customerId", profile.id)
     .order("startTime", { ascending: true });
     
+  // Convert the raw database types to match the expected types
+  const bookings = rawBookings?.map(booking => ({
+    ...booking,
+    status: booking.status as BookingStatus,
+  })) || [];
+
   return (
     <div className="container py-10">
       <div className="mb-8 flex items-center justify-between">
@@ -46,7 +53,7 @@ export default async function BookingsPage() {
         </Link>
       </div>
 
-      <BookingsList initialBookings={bookings || []} />
+      <BookingsList initialBookings={bookings} />
     </div>
   );
 } 
