@@ -78,7 +78,7 @@ export default async function BookingPage(props: BookingPageProps) {
   }
 
   // Convert serviceData to Service type with provider
-  const service: Service & { provider: any } = {
+  const service = {
     id: serviceData.id,
     providerId: serviceData.providerId,
     title: serviceData.title,
@@ -90,7 +90,13 @@ export default async function BookingPage(props: BookingPageProps) {
     categoryId: serviceData.categoryId,
     createdAt: new Date(serviceData.createdAt),
     updatedAt: new Date(serviceData.updatedAt),
-    provider: serviceData.provider,
+    provider: {
+      id: serviceData.provider.id,
+      firstName: serviceData.provider.firstName,
+      lastName: serviceData.provider.lastName,
+      displayName: serviceData.provider.displayName,
+      avatarUrl: serviceData.provider.avatarUrl,
+    }
   };
 
   return (

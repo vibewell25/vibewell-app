@@ -13,8 +13,22 @@ import { showBookingNotification } from "@/components/notifications";
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
 
+// Define a simplified provider type that doesn't require all Profile fields
+interface ProviderInfo {
+  id: string;
+  firstName: string;
+  lastName: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+}
+
+// Define a service type that can be used with a simplified provider
+type ServiceWithProvider = Omit<Service, 'provider'> & {
+  provider?: ProviderInfo;
+};
+
 interface BookingFormProps {
-  service: Service;
+  service: ServiceWithProvider;
   profile: Profile;
 }
 
@@ -198,7 +212,7 @@ export function BookingForm({ service, profile }: BookingFormProps) {
       </Button>
       
       <p className="text-xs text-center text-muted-foreground">
-        By confirming this booking, you agree to the cancellation policy and terms of service.
+        By confirming this booking, you agree to our terms and conditions.
       </p>
     </form>
   );
