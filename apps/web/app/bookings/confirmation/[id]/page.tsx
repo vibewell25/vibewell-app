@@ -6,9 +6,9 @@ import { getCurrentProfile } from "@/lib/supabase/server";
 import { formatDate, formatTime } from "@vibewell/utils";
 
 interface BookingConfirmationPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: BookingConfirmationPageProps): Promise<Metadata> {
@@ -18,7 +18,8 @@ export async function generateMetadata({ params }: BookingConfirmationPageProps)
   };
 }
 
-export default async function BookingConfirmationPage({ params }: BookingConfirmationPageProps) {
+export default async function BookingConfirmationPage(props: BookingConfirmationPageProps) {
+  const params = await props.params;
   const supabase = createServerClient();
   const profile = await getCurrentProfile();
 

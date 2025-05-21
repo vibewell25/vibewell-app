@@ -7,12 +7,13 @@ import { BookingForm } from "@/components/services/booking-form";
 import { UserRole } from "@vibewell/types";
 
 interface BookingPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function generateMetadata({ params }: BookingPageProps): Promise<Metadata> {
+export async function generateMetadata(props: BookingPageProps): Promise<Metadata> {
+  const params = await props.params;
   const supabase = createServerClient();
   const { data: service } = await supabase
     .from("services")
@@ -33,7 +34,8 @@ export async function generateMetadata({ params }: BookingPageProps): Promise<Me
   };
 }
 
-export default async function BookingPage({ params }: BookingPageProps) {
+export default async function BookingPage(props: BookingPageProps) {
+  const params = await props.params;
   const supabase = createServerClient();
   const profile = await getCurrentProfile();
 

@@ -6,12 +6,13 @@ import { getCurrentProfile } from "@/lib/supabase/server";
 import { ServiceReviews } from "@/components/reviews/service-reviews";
 
 interface ServicePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function generateMetadata({ params }: ServicePageProps): Promise<Metadata> {
+export async function generateMetadata(props: ServicePageProps): Promise<Metadata> {
+  const params = await props.params;
   const supabase = createServerClient();
   const { data: service } = await supabase
     .from("services")
@@ -32,7 +33,8 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
   };
 }
 
-export default async function ServicePage({ params }: ServicePageProps) {
+export default async function ServicePage(props: ServicePageProps) {
+  const params = await props.params;
   const supabase = createServerClient();
   const profile = await getCurrentProfile();
 

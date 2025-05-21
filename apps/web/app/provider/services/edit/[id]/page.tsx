@@ -12,12 +12,13 @@ export const metadata: Metadata = {
 };
 
 interface EditServicePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default async function EditServicePage({ params }: EditServicePageProps) {
+export default async function EditServicePage(props: EditServicePageProps) {
+  const params = await props.params;
   const profile = await getCurrentProfile();
 
   if (!profile) {

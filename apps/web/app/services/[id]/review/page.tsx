@@ -7,12 +7,13 @@ import { ReviewForm } from "@/components/reviews/review-form";
 import { BookingStatus } from "@vibewell/types";
 
 interface ReviewPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function generateMetadata({ params }: ReviewPageProps): Promise<Metadata> {
+export async function generateMetadata(props: ReviewPageProps): Promise<Metadata> {
+  const params = await props.params;
   const supabase = createServerClient();
   const { data: service } = await supabase
     .from("services")
@@ -33,7 +34,8 @@ export async function generateMetadata({ params }: ReviewPageProps): Promise<Met
   };
 }
 
-export default async function ReviewPage({ params }: ReviewPageProps) {
+export default async function ReviewPage(props: ReviewPageProps) {
+  const params = await props.params;
   const supabase = createServerClient();
   const profile = await getCurrentProfile();
 
