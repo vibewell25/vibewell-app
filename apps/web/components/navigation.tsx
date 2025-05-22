@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UserRole } from "@vibewell/types";
+import { Logo } from "./ui/logo";
 
 type Profile = {
   id: string;
@@ -22,6 +23,7 @@ export function Navigation() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Check if current path is active
   const isActive = (path: string) => {
@@ -50,26 +52,32 @@ export function Navigation() {
 
         if (user) {
           // Fetch user profile
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from("profiles")
             .select("*")
             .eq("userId", user.id)
             .single();
 
+          if (error) {
+            // Store error in state instead of logging to console
+            setError(`Failed to fetch profile: ${error.message}`);
+          }
+
           if (data) {
-            // Convert data to proper Profile type
+            // Convert data to proper Profile type with defaults for missing fields
             setProfile({
-              id: data.id,
-              firstName: data.firstName,
-              lastName: data.lastName,
-              email: data.email,
-              role: data.role as UserRole,
-              avatarUrl: data.avatarUrl,
+              id: data.id || "",
+              firstName: data.firstName || "",
+              lastName: data.lastName || "",
+              email: data.email || user.email || "",
+              role: data.role as UserRole || UserRole.CUSTOMER,
+              avatarUrl: data.avatarUrl || null,
             });
           }
         }
-      } catch (error) {
-        console.error("Error fetching user:", error);
+      } catch (err) {
+        // Store error in state instead of logging to console
+        setError(`Error fetching user: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setIsLoading(false);
       }
@@ -79,9 +87,48 @@ export function Navigation() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setUser(session?.user ?? null);
-        if (!session?.user) {
+        
+        if (session?.user) {
+          try {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("userId", session.user.id)
+              .single();
+
+            if (error) {
+              // Store error in state instead of logging to console
+              setError(`Auth state change error: ${error.message}`);
+            }
+
+            if (data) {
+              setProfile({
+                id: data.id || "",
+                firstName: data.firstName || "",
+                lastName: data.lastName || "",
+                email: data.email || session.user.email || "",
+                role: data.role as UserRole || UserRole.CUSTOMER,
+                avatarUrl: data.avatarUrl || null,
+              });
+            } else {
+              // If no profile data, create a minimal profile from user info
+              const email = session.user.email || "";
+              setProfile({
+                id: session.user.id,
+                firstName: email.split('@')[0] || "User",
+                lastName: "",
+                email: email,
+                role: UserRole.CUSTOMER,
+                avatarUrl: null,
+              });
+            }
+          } catch (err) {
+            // Store error in state instead of logging to console
+            setError(`Error in auth state change: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        } else {
           setProfile(null);
         }
       }
@@ -95,17 +142,48 @@ export function Navigation() {
   // Sign out handler
   const handleSignOut = async () => {
     const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
+    try {
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    } catch (err) {
+      // Store error in state instead of logging to console
+      setError(`Sign out error: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
+  // Get user initials safely
+  const getUserInitials = () => {
+    if (!profile) return "U";
+    const firstInitial = profile.firstName?.[0] || "";
+    const lastInitial = profile.lastName?.[0] || "";
+    return firstInitial + lastInitial || "U";
+  };
+
+  // Get user display name safely
+  const getUserDisplayName = () => {
+    if (!profile) return "User";
+    if (profile.firstName) {
+      return profile.firstName;
+    }
+    if (profile.email) {
+      return profile.email.split('@')[0];
+    }
+    return "User";
+  };
+
+  // Render content based on the component state
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
+      {/* Render error message if there is one */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 text-sm" role="alert">
+          <span className="sr-only">Error:</span> {error}
+        </div>
+      )}
+      
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">VibeWell</span>
-          </Link>
+          <Logo />
           <nav className="hidden md:flex ml-6 space-x-4">
             <Link
               href="/"
@@ -174,27 +252,28 @@ export function Navigation() {
                   type="button"
                   className="flex items-center space-x-2"
                   onClick={toggleUserMenu}
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="true"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary overflow-hidden">
                     {profile?.avatarUrl ? (
                       <img
                         src={profile.avatarUrl}
-                        alt={`${profile.firstName} ${profile.lastName}`}
+                        alt={`${profile.firstName || 'User'} ${profile.lastName || ''}`}
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
                       <span className="text-sm font-medium">
-                        {profile?.firstName?.[0]}
-                        {profile?.lastName?.[0]}
+                        {getUserInitials()}
                       </span>
                     )}
                   </div>
-                  <span className="text-sm font-medium">{profile?.firstName}</span>
+                  <span className="text-sm font-medium">{getUserDisplayName()}</span>
                 </button>
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 rounded-md border bg-background p-1 shadow-md">
                     <div className="p-2 text-sm font-medium">
-                      {profile?.email}
+                      {profile?.email || user.email || "User"}
                     </div>
                     <div className="border-t pt-1">
                       <Link
@@ -250,7 +329,10 @@ export function Navigation() {
           <button
             className="md:hidden flex h-10 w-10 items-center justify-center rounded-md border border-input"
             onClick={toggleMenu}
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu"
           >
+            <span className="sr-only">Toggle menu</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -262,6 +344,7 @@ export function Navigation() {
               strokeLinecap="round"
               strokeLinejoin="round"
               className="h-4 w-4"
+              aria-hidden="true"
             >
               {isMenuOpen ? (
                 <path d="M18 6 6 18M6 6l12 12" />
@@ -275,7 +358,7 @@ export function Navigation() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t px-4 py-4">
+        <div id="mobile-menu" className="md:hidden border-t px-4 py-4">
           <nav className="flex flex-col space-y-4">
             <Link
               href="/"
@@ -335,22 +418,21 @@ export function Navigation() {
             ) : !isLoading && user ? (
               <div className="flex flex-col space-y-2 pt-2 border-t">
                 <div className="flex items-center space-x-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary overflow-hidden">
                     {profile?.avatarUrl ? (
                       <img
                         src={profile.avatarUrl}
-                        alt={`${profile.firstName} ${profile.lastName}`}
+                        alt={`${profile.firstName || 'User'} ${profile.lastName || ''}`}
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
                       <span className="text-sm font-medium">
-                        {profile?.firstName?.[0]}
-                        {profile?.lastName?.[0]}
+                        {getUserInitials()}
                       </span>
                     )}
                   </div>
                   <span className="text-sm font-medium">
-                    {profile?.firstName} {profile?.lastName}
+                    {getUserDisplayName()} {profile?.lastName || ''}
                   </span>
                 </div>
                 <Link

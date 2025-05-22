@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Avatar } from "../ui/avatar";
+import { Avatar } from "@vibewell/ui";
 import { Profile } from "@vibewell/types";
 
 interface ProviderDashboardProps {

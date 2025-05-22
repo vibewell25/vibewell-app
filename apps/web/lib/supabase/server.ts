@@ -1,15 +1,16 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import type { Database } from './database.types';
+import type { Database } from '@/lib/supabase/database.types';
 
 /**
  * Create a Supabase client for server components
  * In development, returns a mock client if Supabase credentials are missing
  */
-export const createServerClient = () => {
+export const createServerClient = async () => {
   try {
+    const cookieStore = cookies();
     return createServerComponentClient<Database>({
-      cookies,
+      cookies: () => cookieStore,
     });
   } catch (error) {
     // In development, provide a mock client
@@ -43,7 +44,7 @@ export const createServerClient = () => {
  * Get the current session from Supabase
  */
 export async function getSession() {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   try {
     const {
       data: { session },
@@ -76,7 +77,7 @@ export async function getCurrentProfile() {
     return null;
   }
 
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data } = await supabase
     .from('profiles')
     .select('*')

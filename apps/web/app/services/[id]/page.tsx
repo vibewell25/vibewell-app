@@ -1,306 +1,179 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createServerClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/supabase/server";
-import { ServiceReviews } from "@/components/reviews/service-reviews";
-import { Review, ReviewSummary } from "@vibewell/types";
-import { UserRole } from "@vibewell/types";
+import { getServiceWithDetails, providers } from "@/lib/mock-data";
+import { ServiceImage } from "@/components/services/service-image";
 
-interface ServicePageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
+type Props = {
+  params: { id: string };
+};
 
-export async function generateMetadata(props: ServicePageProps): Promise<Metadata> {
-  const params = await props.params;
-  const supabase = createServerClient();
-  const { data: service } = await supabase
-    .from("services")
-    .select("title, description")
-    .eq("id", params.id)
-    .single();
-
+export function generateMetadata({ params }: Props): Metadata {
+  const service = getServiceWithDetails(params.id);
+  
   if (!service) {
     return {
       title: "Service Not Found | VibeWell",
-      description: "The requested service could not be found.",
+      description: "The requested service could not be found",
     };
   }
-
+  
   return {
     title: `${service.title} | VibeWell`,
-    description: service.description.substring(0, 160),
+    description: service.description,
   };
 }
 
-export default async function ServicePage(props: ServicePageProps) {
-  const params = await props.params;
-  const supabase = createServerClient();
-  const profile = await getCurrentProfile();
-
-  // Fetch service with its category and provider details
-  const { data: service } = await supabase
-    .from("services")
-    .select(`
-      *,
-      category:categories(*),
-      provider:profiles(id, firstName, lastName, displayName, bio, avatarUrl)
-    `)
-    .eq("id", params.id)
-    .single();
-
+export default function ServiceDetailPage({ params }: Props) {
+  const service = getServiceWithDetails(params.id);
+  
   if (!service) {
-    notFound();
+    return notFound();
   }
-
-  // Check if the current user is the provider of this service
-  const isProvider = profile?.id === service.provider.id;
-
-  // Fetch reviews for this service (public only)
-  const { data: reviewsData } = await supabase
-    .from("reviews")
-    .select(`
-      *,
-      customer:profiles!reviews_customerId_fkey(id, firstName, lastName, displayName, avatarUrl)
-    `)
-    .eq("serviceId", params.id)
-    .eq("isPublic", true)
-    .order("createdAt", { ascending: false });
-
-  // Convert reviewsData to proper Review type
-  const reviews: Review[] = reviewsData?.map(reviewData => ({
-    id: reviewData.id,
-    bookingId: reviewData.bookingId,
-    customerId: reviewData.customerId,
-    providerId: reviewData.providerId,
-    serviceId: reviewData.serviceId,
-    rating: reviewData.rating,
-    comment: reviewData.comment,
-    isPublic: reviewData.isPublic,
-    createdAt: new Date(reviewData.createdAt),
-    updatedAt: new Date(reviewData.updatedAt),
-    customer: reviewData.customer ? {
-      ...reviewData.customer,
-      userId: '', // We don't have this data from the query, but it's required by the Profile type
-      email: '', // We don't have this data from the query, but it's required by the Profile type
-      role: UserRole.CUSTOMER, // Default role, but we don't have this from the query
-      createdAt: new Date(), // We don't have this data from the query
-      updatedAt: new Date(), // We don't have this data from the query
-      displayName: reviewData.customer.displayName || undefined,
-      avatarUrl: reviewData.customer.avatarUrl || undefined,
-    } : undefined,
-  })) || [];
-
-  // Get review summary
-  const { data: countData } = await supabase
-    .from("reviews")
-    .select("rating", { count: "exact" })
-    .eq("serviceId", params.id)
-    .eq("isPublic", true);
-
-  // Calculate average rating and ratings distribution
-  const totalReviews = reviews?.length || 0;
-  const averageRating = totalReviews > 0 
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
-    : 0;
-
-  // Count reviews by rating
-  const ratingCounts = {
-    1: 0,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0,
-  };
-
-  if (reviews && reviews.length > 0) {
-    reviews.forEach((review) => {
-      if (review.rating >= 1 && review.rating <= 5) {
-        ratingCounts[review.rating as keyof typeof ratingCounts]++;
-      }
-    });
-  }
-
-  const reviewSummary: ReviewSummary = {
-    serviceId: params.id,
-    providerId: service.providerId,
-    averageRating,
-    totalReviews,
-    ratings: ratingCounts,
-  };
-
+  
+  const provider = service.provider || providers.find(p => p.id === service.providerId);
+  
   return (
     <div className="container py-10">
-      <div className="mb-8">
-        <Link
-          href="/services"
-          className="text-sm text-primary hover:underline flex items-center gap-1"
+      <div className="mb-6">
+        <Link 
+          href="/services" 
+          className="text-sm text-muted-foreground hover:text-primary mb-4 inline-flex items-center"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-4 w-4"
-          >
-            <path d="m15 18-6-6 6-6" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+            <path d="m15 18-6-6 6-6"/>
           </svg>
           Back to Services
         </Link>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <div className="rounded-lg border bg-card overflow-hidden">
-            <div className="aspect-video relative bg-muted">
-              {/* Service image would go here */}
-              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="64"
-                  height="64"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                  <circle cx="9" cy="9" r="2" />
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                </svg>
-              </div>
-              {service.category && (
-                <div className="absolute top-4 left-4">
-                  <span className="inline-flex items-center rounded-full bg-primary/20 px-3 py-1 text-sm font-medium text-primary backdrop-blur-sm">
-                    {service.category.name}
-                  </span>
-                </div>
-              )}
+      
+      <div className="grid md:grid-cols-2 gap-10">
+        <div>
+          <ServiceImage 
+            src={service.imageUrl} 
+            alt={service.title} 
+            aspectRatio="video" 
+            className="rounded-lg overflow-hidden" 
+          />
+        </div>
+        
+        <div>
+          <h1 className="text-3xl font-bold">{service.title}</h1>
+          
+          {service.category && (
+            <div className="mt-2">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                {service.category.name}
+              </span>
             </div>
-
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold">{service.title}</h1>
-                  <div className="mt-2 flex items-center gap-3">
-                    <div className="font-medium text-xl text-primary">
-                      ${service.price.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                      {service.duration} minutes
-                    </div>
-                  </div>
-                </div>
-
-                {!isProvider && (
-                  <Link
-                    href={`/services/${service.id}/book`}
-                    className="rounded-md bg-primary px-4 py-2 text-primary-foreground shadow hover:bg-primary/90"
-                  >
-                    Book Now
-                  </Link>
-                )}
-              </div>
-
-              <div className="mt-6">
-                <h2 className="text-xl font-semibold mb-2">Description</h2>
-                <div className="prose prose-sm max-w-full">
-                  <p>{service.description}</p>
-                </div>
-              </div>
-            </div>
+          )}
+          
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-2xl font-bold text-primary">${service.price.toFixed(2)}</div>
+            <div className="text-muted-foreground">{service.duration} minutes</div>
           </div>
-
-          <div className="mt-8 rounded-lg border bg-card p-6">
-            <ServiceReviews 
-              reviews={reviews} 
-              summary={reviewSummary}
-              serviceId={params.id}
-              showReviewForm={!isProvider}
-            />
+          
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold mb-2">About this service</h2>
+            <p className="text-muted-foreground">{service.description}</p>
+          </div>
+          
+          {provider && (
+            <div className="mt-8 pt-6 border-t">
+              <h2 className="text-lg font-semibold mb-4">Service Provider</h2>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-primary/10">
+                  {provider.avatarUrl ? (
+                    <img
+                      src={provider.avatarUrl}
+                      alt={provider.displayName || `${provider.firstName} ${provider.lastName}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary/60">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <h3 className="font-medium">
+                    {provider.displayName || `${provider.firstName} ${provider.lastName}`}
+                  </h3>
+                  <Link
+                    href={`/providers/${provider.id}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    View Profile
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="mt-8">
+            <Link
+              href={`/services/${service.id}/booking`}
+              className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+            >
+              Book Now
+            </Link>
           </div>
         </div>
-
-        <div className="lg:col-span-1">
-          <div className="rounded-lg border bg-card p-6 shadow-sm sticky top-6">
-            <h2 className="text-xl font-semibold mb-4">About the Provider</h2>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                {service.provider.avatarUrl ? (
-                  <img
-                    src={service.provider.avatarUrl}
-                    alt={service.provider.displayName || `${service.provider.firstName} ${service.provider.lastName}`}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-primary font-medium">
-                    {service.provider.firstName.charAt(0)}
-                    {service.provider.lastName.charAt(0)}
-                  </span>
-                )}
-              </div>
-              <div>
-                <h3 className="font-medium">
-                  {service.provider.displayName || `${service.provider.firstName} ${service.provider.lastName}`}
-                </h3>
-                <Link
-                  href={`/providers/${service.provider.id}`}
-                  className="text-sm text-primary hover:underline"
-                >
-                  View Profile
-                </Link>
-              </div>
+      </div>
+      
+      <div className="mt-12">
+        <h2 className="text-2xl font-semibold mb-6">What to Expect</h2>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="rounded-lg border bg-card p-6 shadow-sm">
+            <div className="mb-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                <line x1="16" x2="16" y1="2" y2="6" />
+                <line x1="8" x2="8" y1="2" y2="6" />
+                <line x1="3" x2="21" y1="10" y2="10" />
+              </svg>
             </div>
-            <div className="text-sm">
-              <p className="text-muted-foreground">
-                {service.provider.bio || "This provider has not added a bio yet."}
-              </p>
+            <h3 className="text-lg font-medium">Booking</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Select your preferred date and time to book this service.
+            </p>
+          </div>
+          
+          <div className="rounded-lg border bg-card p-6 shadow-sm">
+            <div className="mb-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
             </div>
-
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="font-medium mb-2">More services from this provider</h3>
-              <Link
-                href={`/providers/${service.provider.id}`}
-                className="text-sm text-primary hover:underline"
-              >
-                View All Services →
-              </Link>
+            <h3 className="text-lg font-medium">Location</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Service will be provided at the provider's location.
+            </p>
+          </div>
+          
+          <div className="rounded-lg border bg-card p-6 shadow-sm">
+            <div className="mb-4 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 9V5c0-1.1.9-2 2-2h16a2 2 0 0 1 2 2v4" />
+                <path d="M2 12h20" />
+                <path d="M2 15h20" />
+                <path d="M2 18h20" />
+                <path d="M2 21h20" />
+                <path d="M6 9v12" />
+                <path d="M12 9v12" />
+                <path d="M18 9v12" />
+              </svg>
             </div>
-
-            {!isProvider && (
-              <div className="mt-6 pt-6 border-t">
-                <Link
-                  href={`/services/${service.id}/book`}
-                  className="w-full flex items-center justify-center rounded-md bg-primary px-4 py-2 text-primary-foreground shadow hover:bg-primary/90"
-                >
-                  Book This Service
-                </Link>
-              </div>
-            )}
+            <h3 className="text-lg font-medium">Payment</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Secure payment will be processed after booking confirmation.
+            </p>
           </div>
         </div>
       </div>

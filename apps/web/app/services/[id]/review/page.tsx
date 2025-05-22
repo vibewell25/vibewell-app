@@ -14,7 +14,7 @@ interface ReviewPageProps {
 
 export async function generateMetadata(props: ReviewPageProps): Promise<Metadata> {
   const params = await props.params;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: service } = await supabase
     .from("services")
     .select("title")
@@ -36,7 +36,7 @@ export async function generateMetadata(props: ReviewPageProps): Promise<Metadata
 
 export default async function ReviewPage(props: ReviewPageProps) {
   const params = await props.params;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const profileData = await getCurrentProfile();
 
   if (!profileData) {

@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: ParamsType }): Prom
 
 export default async function BookingCancellationPage({ params }: { params: ParamsType }) {
   const { id } = await params;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const profileData = await getCurrentProfile();
 
   if (!profileData) {

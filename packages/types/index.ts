@@ -41,6 +41,7 @@ export interface Service {
   isActive: boolean;
   categoryId: string;
   isPrivate: boolean;
+  imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   category?: Category;

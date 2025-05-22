@@ -4,21 +4,39 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button, FormInput } from "@vibewell/ui";
-import { profileSchema } from "@/lib/validations/profile";
 import { createClient } from "@/lib/supabase/client";
-import { Profile } from "@vibewell/types";
+import { toast } from "sonner";
+import { UserRole } from "@vibewell/types";
+
+const profileSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  displayName: z.string().optional(),
+  bio: z.string().max(500, "Bio must be less than 500 characters").optional(),
+  phone: z.string().optional(),
+  avatarUrl: z.string().optional(),
+});
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface ProfileFormProps {
-  profile: Profile;
+  initialData: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    displayName?: string | null;
+    bio?: string | null;
+    phone?: string | null;
+    avatarUrl?: string | null;
+    role: UserRole;
+  };
 }
 
-export function ProfileForm({ profile }: ProfileFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
+export function ProfileForm({ initialData }: ProfileFormProps) {
+  const [loading, setLoading] = useState(false);
+  const supabase = createClient();
+  
   const {
     register,
     handleSubmit,
@@ -26,165 +44,154 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      firstName: profile.firstName,
-      lastName: profile.lastName,
-      displayName: profile.displayName || null,
-      email: profile.email,
-      bio: profile.bio || null,
-      phone: profile.phone || null,
-      address: profile.address || null,
-      city: profile.city || null,
-      state: profile.state || null,
-      zipCode: profile.zipCode || null,
-      country: profile.country || null,
+      firstName: initialData.firstName,
+      lastName: initialData.lastName,
+      displayName: initialData.displayName || "",
+      bio: initialData.bio || "",
+      phone: initialData.phone || "",
+      avatarUrl: initialData.avatarUrl || "",
     },
   });
-
+  
   const onSubmit = async (data: ProfileFormValues) => {
-    setIsLoading(true);
-    setMessage(null);
-
+    setLoading(true);
+    
     try {
-      const supabase = createClient();
       const { error } = await supabase
         .from("profiles")
         .update({
           firstName: data.firstName,
           lastName: data.lastName,
-          displayName: data.displayName,
-          bio: data.bio,
-          phone: data.phone,
-          address: data.address,
-          city: data.city,
-          state: data.state,
-          zipCode: data.zipCode,
-          country: data.country,
+          displayName: data.displayName || null,
+          bio: data.bio || null,
+          phone: data.phone || null,
+          avatarUrl: data.avatarUrl || null,
           updatedAt: new Date().toISOString(),
         })
-        .eq("id", profile.id);
-
+        .eq("id", initialData.id);
+      
       if (error) {
         throw error;
       }
-
-      setMessage({
-        type: "success",
-        text: "Profile updated successfully",
-      });
+      
+      toast.success("Profile updated successfully");
     } catch (error: any) {
-      setMessage({
-        type: "error",
-        text: error.message || "Failed to update profile",
-      });
+      toast.error("Failed to update profile");
+      console.error("Error updating profile:", error.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
-
+  
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {message && (
-        <div
-          className={`p-4 rounded-md ${
-            message.type === "success" ? "bg-green-50 text-green-900" : "bg-red-50 text-red-900"
-          }`}
-        >
-          {message.text}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label htmlFor="firstName" className="text-sm font-medium">
+              First Name
+            </label>
+            <input
+              id="firstName"
+              {...register("firstName")}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            {errors.firstName && (
+              <p className="text-sm text-red-500">{errors.firstName.message}</p>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="lastName" className="text-sm font-medium">
+              Last Name
+            </label>
+            <input
+              id="lastName"
+              {...register("lastName")}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            {errors.lastName && (
+              <p className="text-sm text-red-500">{errors.lastName.message}</p>
+            )}
+          </div>
         </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <FormInput
-          id="firstName"
-          label="First Name"
-          error={errors.firstName?.message}
-          {...register("firstName")}
-        />
-        <FormInput
-          id="lastName"
-          label="Last Name"
-          error={errors.lastName?.message}
-          {...register("lastName")}
-        />
+        
+        <div className="space-y-2">
+          <label htmlFor="displayName" className="text-sm font-medium">
+            Display Name (optional)
+          </label>
+          <input
+            id="displayName"
+            {...register("displayName")}
+            placeholder="How you want to be known publicly"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {errors.displayName && (
+            <p className="text-sm text-red-500">{errors.displayName.message}</p>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="phone" className="text-sm font-medium">
+            Phone Number (optional)
+          </label>
+          <input
+            id="phone"
+            {...register("phone")}
+            type="tel"
+            placeholder="+1 (123) 456-7890"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {errors.phone && (
+            <p className="text-sm text-red-500">{errors.phone.message}</p>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="bio" className="text-sm font-medium">
+            Bio (optional)
+          </label>
+          <textarea
+            id="bio"
+            {...register("bio")}
+            rows={4}
+            placeholder="Tell us a bit about yourself"
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {errors.bio && (
+            <p className="text-sm text-red-500">{errors.bio.message}</p>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="avatarUrl" className="text-sm font-medium">
+            Profile Picture URL (optional)
+          </label>
+          <input
+            id="avatarUrl"
+            {...register("avatarUrl")}
+            type="url"
+            placeholder="https://example.com/avatar.jpg"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {errors.avatarUrl && (
+            <p className="text-sm text-red-500">{errors.avatarUrl.message}</p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Enter a URL to an image (JPG, PNG, or GIF)
+          </p>
+        </div>
       </div>
-
-      <FormInput
-        id="displayName"
-        label="Display Name (optional)"
-        error={errors.displayName?.message}
-        {...register("displayName")}
-      />
-
-      <FormInput
-        id="email"
-        label="Email"
-        type="email"
-        disabled
-        error={errors.email?.message}
-        {...register("email")}
-      />
-
-      <div>
-        <label
-          htmlFor="bio"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      
+      <div className="pt-4 border-t flex justify-end">
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
         >
-          Bio (optional)
-        </label>
-        <textarea
-          id="bio"
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[100px] mt-2"
-          placeholder="Tell us about yourself"
-          {...register("bio")}
-        ></textarea>
-        {errors.bio && <p className="text-sm text-red-500">{errors.bio.message}</p>}
+          {loading ? "Saving..." : "Save Changes"}
+        </button>
       </div>
-
-      <FormInput
-        id="phone"
-        label="Phone Number (optional)"
-        error={errors.phone?.message}
-        {...register("phone")}
-      />
-
-      <FormInput
-        id="address"
-        label="Address (optional)"
-        error={errors.address?.message}
-        {...register("address")}
-      />
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <FormInput
-          id="city"
-          label="City (optional)"
-          error={errors.city?.message}
-          {...register("city")}
-        />
-        <FormInput
-          id="state"
-          label="State/Province (optional)"
-          error={errors.state?.message}
-          {...register("state")}
-        />
-        <FormInput
-          id="zipCode"
-          label="Zip/Postal Code (optional)"
-          error={errors.zipCode?.message}
-          {...register("zipCode")}
-        />
-      </div>
-
-      <FormInput
-        id="country"
-        label="Country (optional)"
-        error={errors.country?.message}
-        {...register("country")}
-      />
-
-      <Button type="submit" isLoading={isLoading} loadingText="Saving...">
-        Save Changes
-      </Button>
     </form>
   );
 } 

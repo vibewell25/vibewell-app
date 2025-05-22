@@ -99,6 +99,9 @@ export function showBookingNotification({
   }
 }
 
+/**
+ * Shows a toast notification based on the booking status change
+ */
 export function showBookingStatusNotification(
   status: BookingStatus,
   bookingId: string,
@@ -106,35 +109,88 @@ export function showBookingStatusNotification(
   date: string,
   time: string
 ) {
+  const formattedDate = new Date(date).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
   switch (status) {
     case BookingStatus.CONFIRMED:
-      showBookingNotification({
-        type: "confirmed",
-        bookingId,
-        serviceName,
-        date,
-        time,
-      });
+      toast.success(
+        `Your booking for ${serviceName} on ${formattedDate} at ${time} has been confirmed.`,
+        {
+          description: "Check your email for details.",
+          action: {
+            label: "View",
+            onClick: () => window.location.href = `/bookings/${bookingId}`,
+          },
+        }
+      );
       break;
-    case BookingStatus.COMPLETED:
-      showBookingNotification({
-        type: "completed",
-        bookingId,
-        serviceName,
-        date,
-        time,
-      });
-      break;
+
     case BookingStatus.CANCELLED:
-      showBookingNotification({
-        type: "cancelled",
-        bookingId,
-        serviceName,
-        date,
-        time,
-      });
+      toast.error(
+        `Your booking for ${serviceName} on ${formattedDate} has been cancelled.`,
+        {
+          description: "You may book another time slot if needed.",
+          action: {
+            label: "Book Again",
+            onClick: () => window.location.href = `/services`,
+          },
+        }
+      );
       break;
+
+    case BookingStatus.COMPLETED:
+      toast.success(
+        `Your booking for ${serviceName} has been marked as completed.`,
+        {
+          description: "We hope you enjoyed your session!",
+          action: {
+            label: "Leave Review",
+            onClick: () => window.location.href = `/services/${bookingId}/review`,
+          },
+        }
+      );
+      break;
+
+    case BookingStatus.PENDING:
+      toast.info(
+        `Your booking for ${serviceName} is pending confirmation.`,
+        {
+          description: "The provider will confirm your booking soon.",
+          action: {
+            label: "View",
+            onClick: () => window.location.href = `/bookings/${bookingId}`,
+          },
+        }
+      );
+      break;
+
+    case BookingStatus.NO_SHOW:
+      toast.error(
+        `You were marked as no-show for ${serviceName} on ${formattedDate}.`,
+        {
+          description: "Please contact customer support if this was a mistake.",
+          action: {
+            label: "Support",
+            onClick: () => window.location.href = `/help`,
+          },
+        }
+      );
+      break;
+
     default:
-      break;
+      toast.info(
+        `Your booking status for ${serviceName} has been updated.`,
+        {
+          description: "Check your bookings for more details.",
+          action: {
+            label: "View",
+            onClick: () => window.location.href = `/bookings/${bookingId}`,
+          },
+        }
+      );
   }
 } 

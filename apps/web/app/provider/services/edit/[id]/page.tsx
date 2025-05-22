@@ -48,7 +48,7 @@ export default async function EditServicePage(props: EditServicePageProps) {
   };
 
   // Fetch service
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: serviceData } = await supabase
     .from("services")
     .select("*")

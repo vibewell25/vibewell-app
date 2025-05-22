@@ -41,7 +41,7 @@ export default async function ProviderServicesPage() {
   };
 
   // Fetch services
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: servicesData } = await supabase
     .from("services")
     .select("*, category:categories(*)")

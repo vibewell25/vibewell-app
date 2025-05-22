@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Avatar } from "../ui/avatar";
+import { Avatar } from "@vibewell/ui";
 import { Profile, UserRole } from "@vibewell/types";
 
 interface DashboardShellProps {

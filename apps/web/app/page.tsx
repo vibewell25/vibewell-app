@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { Metadata } from "next";
+import { HomeCTASection } from "@/components/home-cta-section";
+import { locations } from "@/lib/mock-data";
+import { MapPin, Globe } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Home | VibeWell",
@@ -7,6 +10,23 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
+  // Group locations by country
+  const countriesWithLocations = locations.reduce((acc, location) => {
+    if (!acc[location.country]) {
+      acc[location.country] = [];
+    }
+    acc[location.country].push(location);
+    return acc;
+  }, {} as Record<string, typeof locations>);
+
+  // Get list of countries with count
+  const countries = Object.entries(countriesWithLocations)
+    .map(([country, locs]) => ({
+      name: country,
+      count: locs.length,
+    }))
+    .sort((a, b) => b.count - a.count);
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
@@ -23,20 +43,7 @@ export default function HomePage() {
                     Connect with providers and other users through a modern social experience.
                   </p>
                 </div>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Link
-                    href="/auth/signup"
-                    className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    Get Started
-                  </Link>
-                  <Link
-                    href="/services"
-                    className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-8 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    Browse Services
-                  </Link>
-                </div>
+                <HomeCTASection />
               </div>
               <div className="flex items-center justify-center">
                 <div className="relative aspect-video overflow-hidden rounded-xl bg-gradient-to-b from-primary/20 to-primary/5 md:aspect-square">
@@ -45,6 +52,79 @@ export default function HomePage() {
                   <div className="absolute inset-0 flex items-center justify-center text-primary">
                     <span className="text-xl font-medium">Hero Image</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Global Locations Section */}
+        <section className="w-full py-12 md:py-16">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+                  Global Reach, Local Service
+                </h2>
+                <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed dark:text-gray-400">
+                  VibeWell connects you with beauty and wellness services in locations around the world
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {countries.map((country) => (
+                <Link 
+                  key={country.name}
+                  href={`/services?country=${encodeURIComponent(country.name)}`}
+                  className="flex flex-col items-center p-4 rounded-lg border bg-card hover:bg-accent/10 transition-colors"
+                >
+                  <Globe className="h-8 w-8 mb-2 text-primary" />
+                  <span className="font-medium text-center">{country.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {country.count} location{country.count !== 1 ? 's' : ''}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+        
+        {/* Map Preview Section */}
+        <section className="w-full py-12 md:py-16 bg-muted/50">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col md:flex-row gap-8 items-center">
+              <div className="md:w-1/2">
+                <h2 className="text-3xl font-bold tracking-tighter mb-4">
+                  Find Services on the Map
+                </h2>
+                <p className="text-gray-500 mb-6">
+                  Discover beauty and wellness services near you with our interactive map. 
+                  Easily find providers in your area or plan services for your next trip.
+                </p>
+                <div className="flex flex-wrap gap-3 mb-6">
+                  {Object.entries(countriesWithLocations)
+                    .slice(0, 4)
+                    .map(([country, countryLocations]) => (
+                      <div key={country} className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-1 text-primary" />
+                        <span className="text-sm">{country}</span>
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          ({countryLocations.length})
+                        </span>
+                      </div>
+                    ))}
+                </div>
+                <Link 
+                  href="/services?view=map" 
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow hover:bg-primary/90"
+                >
+                  Explore Map
+                </Link>
+              </div>
+              <div className="md:w-1/2 rounded-lg overflow-hidden border">
+                <div className="aspect-video bg-card flex items-center justify-center">
+                  <span className="text-muted-foreground">Interactive Map Preview</span>
                 </div>
               </div>
             </div>

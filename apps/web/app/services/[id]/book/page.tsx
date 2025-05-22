@@ -14,7 +14,7 @@ interface BookingPageProps {
 
 export async function generateMetadata(props: BookingPageProps): Promise<Metadata> {
   const params = await props.params;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: service } = await supabase
     .from("services")
     .select("title")
@@ -36,7 +36,7 @@ export async function generateMetadata(props: BookingPageProps): Promise<Metadat
 
 export default async function BookingPage(props: BookingPageProps) {
   const params = await props.params;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const profileData = await getCurrentProfile();
 
   // Redirect to login if not authenticated

@@ -46,6 +46,7 @@ CREATE TABLE services (
   "isActive" BOOLEAN NOT NULL DEFAULT true,
   "categoryId" UUID NOT NULL REFERENCES categories(id),
   "isPrivate" BOOLEAN NOT NULL DEFAULT false,
+  "imageUrl" TEXT,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );

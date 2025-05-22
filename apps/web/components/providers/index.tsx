@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ThemeProvider } from "./theme-provider";
+import { ThemeProvider } from "@vibewell/ui";
 import { Toaster } from "sonner";
 import { NotificationProvider } from "@/components/notifications";
 
@@ -14,7 +14,7 @@ export function Providers({ children }: ProvidersProps) {
   const safeChildren = children as React.ReactElement;
 
   return (
-    <ThemeProvider defaultTheme="system" storageKey="vibewell-theme">
+    <ThemeProvider defaultTheme="light" storageKey="vibewell-theme">
       {safeChildren}
       <Toaster position="bottom-right" />
       <NotificationProvider />

@@ -12,7 +12,7 @@
     "test": {
       "dependsOn": ["build"],
       "outputs": [],
-      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+      "inputs": ["app/**/*.tsx", "app/**/*.ts", "components/**/*.tsx", "components/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
     },
     "dev": {
       "cache": false,
