@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm run build",
   "regions": ["iad1"],
   "framework": "nextjs",
   "git": {
