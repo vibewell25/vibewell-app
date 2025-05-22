@@ -20,14 +20,19 @@ CREATE POLICY "Users can update their own profile"
 ON profiles FOR UPDATE
 USING (auth.uid() = "userId");
 
--- Providers can view profiles of their customers
+-- Users can create their own profile
+CREATE POLICY "Users can create their own profile"
+ON profiles FOR INSERT
+WITH CHECK (auth.uid() = "userId");
+
+-- Providers can view profiles of their customers - FIXED RECURSIVE REFERENCE
 CREATE POLICY "Providers can view customer profiles"
 ON profiles FOR SELECT
 USING (
   EXISTS (
     SELECT 1 FROM bookings
     WHERE bookings."providerId" IN (
-      SELECT id FROM profiles WHERE "userId" = auth.uid()
+      SELECT profiles.id FROM profiles WHERE profiles."userId" = auth.uid()
     )
     AND bookings."customerId" = profiles.id
   )

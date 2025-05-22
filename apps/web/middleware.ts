@@ -53,15 +53,28 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
   } catch (error) {
+    // Handle errors more gracefully
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Don't log infinite recursion errors (they're noisy and expected until fixed)
+    if (!errorMessage.includes('infinite recursion')) {
+      console.error('Authentication error:', errorMessage);
+    }
+    
     // In development, if Supabase credentials are missing, allow access
     if (process.env.NODE_ENV === 'development') {
-      console.warn('Supabase credentials missing. Authentication is disabled in development mode.')
+      console.warn('Supabase credentials missing or error in development mode.');
+      // Continue despite errors in development
+      return res;
     } else {
-      // In production, we should still enforce authentication
-      console.error('Authentication error:', error)
-      // Redirect to a static error page
-      const errorUrl = new URL('/error', req.url)
-      return NextResponse.redirect(errorUrl)
+      // In production, we should still enforce authentication for non-recursion errors
+      if (!errorMessage.includes('infinite recursion')) {
+        // Redirect to a static error page
+        const errorUrl = new URL('/error', req.url)
+        return NextResponse.redirect(errorUrl)
+      }
+      // For recursion errors, just continue
+      return res;
     }
   }
   

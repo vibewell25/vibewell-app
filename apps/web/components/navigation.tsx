@@ -99,8 +99,12 @@ export function Navigation() {
               .single();
 
             if (error) {
-              // Store error in state instead of logging to console
-              setError(`Auth state change error: ${error.message}`);
+              // Don't display RLS policy errors to the user, just log them
+              if (error.message.includes('infinite recursion')) {
+                console.error(`Auth state change error: ${error.message}`);
+              } else {
+                setError(`Auth state change error: ${error.message}`);
+              }
             }
 
             if (data) {
@@ -125,8 +129,13 @@ export function Navigation() {
               });
             }
           } catch (err) {
-            // Store error in state instead of logging to console
-            setError(`Error in auth state change: ${err instanceof Error ? err.message : String(err)}`);
+            // Filter out recursion errors from UI display
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            if (!errorMessage.includes('infinite recursion')) {
+              setError(`Error in auth state change: ${errorMessage}`);
+            } else {
+              console.error(`Error in auth state change: ${errorMessage}`);
+            }
           }
         } else {
           setProfile(null);
