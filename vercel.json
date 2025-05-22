@@ -8,5 +8,7 @@
     "deploymentEnabled": {
       "main": true
     }
-  }
+  },
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "workspaceRoot": "apps/web"
 } 

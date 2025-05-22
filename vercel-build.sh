@@ -9,6 +9,7 @@ cp .pnpmrc ~/.pnpmrc
 echo "Installing dependencies..."
 pnpm install
 
-# Run the build
+# Run the build for the web app specifically
 echo "Running build..."
+cd apps/web
 pnpm build 
