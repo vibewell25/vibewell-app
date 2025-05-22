@@ -5,6 +5,7 @@ import { getCurrentProfile } from "@/lib/supabase/server";
 import { ServiceForm } from "@/components/services/service-form";
 import { UserRole, Profile, Service } from "@vibewell/types";
 import { createServerClient } from "@/lib/supabase/server";
+import { safeProfileData } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Edit Service | VibeWell",
@@ -30,22 +31,8 @@ export default async function EditServicePage(props: EditServicePageProps) {
     redirect("/dashboard");
   }
 
-  // Convert profileData to Profile type
-  const profile: Profile = {
-    ...profileData,
-    role: profileData.role as UserRole,
-    createdAt: new Date(profileData.createdAt),
-    updatedAt: new Date(profileData.updatedAt),
-    displayName: profileData.displayName || undefined,
-    bio: profileData.bio || undefined,
-    avatarUrl: profileData.avatarUrl || undefined,
-    phone: profileData.phone || undefined,
-    address: profileData.address || undefined,
-    city: profileData.city || undefined,
-    state: profileData.state || undefined,
-    zipCode: profileData.zipCode || undefined,
-    country: profileData.country || undefined,
-  };
+  // Convert profileData to Profile type with our utility function
+  const profile: Profile = safeProfileData(profileData);
 
   // Fetch service
   const supabase = await createServerClient();

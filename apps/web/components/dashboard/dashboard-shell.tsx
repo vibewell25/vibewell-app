@@ -21,11 +21,11 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   };
 
   return (
-    <div className="container py-10">
+    <div className="container max-w-7xl py-12">
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold">Welcome, {profile.firstName}</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Manage your beauty and wellness experience in one place.
           </p>
         </div>
@@ -33,7 +33,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
           {profile.role !== UserRole.CUSTOMER && (
             <button
               onClick={navigateToRoleDashboard}
-              className="rounded-md bg-primary px-4 py-2 text-primary-foreground shadow hover:bg-primary/90"
+              className="card-modern-button"
             >
               {profile.role === UserRole.PROVIDER
                 ? "Provider Dashboard"
@@ -45,7 +45,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
 
       <div className="mb-8 flex flex-col md:flex-row items-start gap-8">
         <div className="w-full md:w-1/3 space-y-6">
-          <div className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="card-modern p-6">
             <div className="flex items-center space-x-4">
               <Avatar 
                 src={profile.avatarUrl} 
@@ -57,7 +57,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   {profile.displayName || `${profile.firstName} ${profile.lastName}`}
                 </h2>
                 <p className="text-sm text-muted-foreground">{profile.email}</p>
-                <span className="mt-1 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                <span className="card-modern-badge-primary mt-1">
                   {profile.role}
                 </span>
               </div>
@@ -65,20 +65,20 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             <div className="mt-4 space-y-2">
               <Link
                 href="/profile"
-                className="block w-full rounded-md border text-center py-2 text-sm transition-colors hover:bg-accent"
+                className="block w-full rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-center py-2 text-sm transition-colors hover:bg-accent"
               >
                 Edit Profile
               </Link>
               <Link
                 href="/profile/settings"
-                className="block w-full rounded-md border text-center py-2 text-sm transition-colors hover:bg-accent"
+                className="block w-full rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-center py-2 text-sm transition-colors hover:bg-accent"
               >
                 Account Settings
               </Link>
             </div>
           </div>
 
-          <div className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="card-modern p-6">
             <h3 className="text-lg font-medium mb-2">Quick Links</h3>
             <ul className="space-y-2">
               <li>
@@ -108,13 +108,58 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   <span>Saved Services</span>
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/messages"
+                  className="flex items-center space-x-2 text-sm text-primary hover:underline"
+                >
+                  <span>💬</span>
+                  <span>Messages</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/analytics"
+                  className="flex items-center space-x-2 text-sm text-primary hover:underline"
+                >
+                  <span>📊</span>
+                  <span>Analytics</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/virtual-tryon"
+                  className="flex items-center space-x-2 text-sm text-primary hover:underline"
+                >
+                  <span>🤖</span>
+                  <span>AI Virtual Try-On</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/social"
+                  className="flex items-center space-x-2 text-sm text-primary hover:underline"
+                >
+                  <span>👥</span>
+                  <span>Social Feed</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/courses"
+                  className="flex items-center space-x-2 text-sm text-primary hover:underline"
+                >
+                  <span>📚</span>
+                  <span>Learning Courses</span>
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         <div className="w-full md:w-2/3">
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
+            <div className="card-modern p-6">
               <h3 className="text-lg font-medium mb-2">Upcoming Appointments</h3>
               <div className="py-8 text-center text-muted-foreground">
                 <p>You don't have any upcoming appointments.</p>
@@ -127,14 +172,14 @@ export function DashboardShell({ profile }: DashboardShellProps) {
               </div>
             </div>
 
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
+            <div className="card-modern p-6">
               <h3 className="text-lg font-medium mb-2">Recent Activity</h3>
               <div className="py-8 text-center text-muted-foreground">
                 <p>You don't have any recent activity.</p>
               </div>
             </div>
 
-            <div className="rounded-lg border bg-card p-6 shadow-sm lg:col-span-2">
+            <div className="card-modern p-6 lg:col-span-2">
               <h3 className="text-lg font-medium mb-2">Recommended For You</h3>
               <div className="py-8 text-center text-muted-foreground">
                 <p>Personalized recommendations coming soon!</p>

@@ -2,7 +2,9 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/server";
 import { OverviewCard } from "@/components/dashboard/overview-card";
-import { BookingStatus } from "@vibewell/types";
+import { BookingStatus, UserRole, Profile } from "@vibewell/types";
+import { getCurrentProfile } from "@/lib/supabase/server";
+import { safeProfileData } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Provider Dashboard | VibeWell",
@@ -12,17 +14,12 @@ export const metadata: Metadata = {
 export default async function ProviderDashboardPage() {
   const supabase = await createServerClient();
   
-  // Get current user profile
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  // Get current user profile with improved error handling
+  const profileData = await getCurrentProfile();
+  if (!profileData) return null;
   
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("userId", user.id)
-    .single();
-  
-  if (!profile) return null;
+  // Use our utility function to safely handle profile properties
+  const profile: Profile = safeProfileData(profileData);
   
   // Fetch provider stats
   const { count: totalServices } = await supabase
@@ -203,6 +200,17 @@ export default async function ProviderDashboardPage() {
                   <path d="M16 18h.01" />
                 </svg>
                 <span>Manage Schedule</span>
+              </Link>
+              
+              <Link
+                href="/provider/analytics"
+                className="flex items-center gap-2 rounded-md border p-4 hover:bg-accent transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                  <path d="M3 3v18h18" />
+                  <path d="m19 9-5 5-4-4-3 3" />
+                </svg>
+                <span>View Analytics</span>
               </Link>
             </div>
           </div>

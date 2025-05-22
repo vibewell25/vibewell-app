@@ -4,15 +4,31 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button, FormInput } from "@vibewell/ui";
-import { passwordChangeSchema } from "@/lib/validations/account";
 import { createClient } from "@/lib/supabase/client";
 
-type PasswordFormValues = z.infer<typeof passwordChangeSchema>;
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      ),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export function PasswordForm() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const {
     register,
@@ -20,7 +36,7 @@ export function PasswordForm() {
     reset,
     formState: { errors },
   } = useForm<PasswordFormValues>({
-    resolver: zodResolver(passwordChangeSchema),
+    resolver: zodResolver(passwordSchema),
     defaultValues: {
       currentPassword: "",
       newPassword: "",
@@ -29,93 +45,97 @@ export function PasswordForm() {
   });
 
   const onSubmit = async (data: PasswordFormValues) => {
-    setIsLoading(true);
-    setMessage(null);
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
 
     try {
       const supabase = createClient();
-      
-      // First verify the current password
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: "", // We'll get this from the session in the next step
-        password: data.currentPassword,
-      });
 
-      if (signInError) {
-        throw new Error("Current password is incorrect");
-      }
-
-      // Get the user's email from the session
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session?.user.email) {
-        throw new Error("Unable to retrieve user information");
-      }
-
-      // Update the password
-      const { error: updateError } = await supabase.auth.updateUser({
+      // Update the user's password
+      const { error: passwordError } = await supabase.auth.updateUser({
         password: data.newPassword,
       });
 
-      if (updateError) {
-        throw updateError;
+      if (passwordError) {
+        throw passwordError;
       }
 
-      setMessage({
-        type: "success",
-        text: "Password updated successfully",
-      });
-      
-      // Reset the form
+      setSuccess("Password updated successfully");
       reset();
-    } catch (error: any) {
-      setMessage({
-        type: "error",
-        text: error.message || "Failed to update password",
-      });
+    } catch (err: any) {
+      setError(err.message || "An error occurred while updating your password");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {message && (
-        <div
-          className={`p-4 rounded-md ${
-            message.type === "success" ? "bg-green-50 text-green-900" : "bg-red-50 text-red-900"
-          }`}
-        >
-          {message.text}
+      {error && (
+        <div className="rounded-md bg-destructive/10 border border-destructive p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+      
+      {success && (
+        <div className="rounded-md bg-green-50 border border-green-200 p-4 text-sm text-green-600">
+          {success}
         </div>
       )}
 
-      <FormInput
-        id="currentPassword"
-        label="Current Password"
-        type="password"
-        error={errors.currentPassword?.message}
-        {...register("currentPassword")}
-      />
+      <div className="space-y-2">
+        <label htmlFor="currentPassword" className="text-sm font-medium">
+          Current Password
+        </label>
+        <input
+          id="currentPassword"
+          type="password"
+          {...register("currentPassword")}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        />
+        {errors.currentPassword && (
+          <p className="text-sm text-destructive">{errors.currentPassword.message}</p>
+        )}
+      </div>
 
-      <FormInput
-        id="newPassword"
-        label="New Password"
-        type="password"
-        error={errors.newPassword?.message}
-        {...register("newPassword")}
-      />
+      <div className="space-y-2">
+        <label htmlFor="newPassword" className="text-sm font-medium">
+          New Password
+        </label>
+        <input
+          id="newPassword"
+          type="password"
+          {...register("newPassword")}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        />
+        {errors.newPassword && (
+          <p className="text-sm text-destructive">{errors.newPassword.message}</p>
+        )}
+      </div>
 
-      <FormInput
-        id="confirmPassword"
-        label="Confirm New Password"
-        type="password"
-        error={errors.confirmPassword?.message}
-        {...register("confirmPassword")}
-      />
+      <div className="space-y-2">
+        <label htmlFor="confirmPassword" className="text-sm font-medium">
+          Confirm New Password
+        </label>
+        <input
+          id="confirmPassword"
+          type="password"
+          {...register("confirmPassword")}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        />
+        {errors.confirmPassword && (
+          <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+        )}
+      </div>
 
-      <Button type="submit" isLoading={isLoading} loadingText="Updating...">
-        Update Password
-      </Button>
+      <button
+        type="submit"
+        disabled={loading}
+        className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+      >
+        {loading ? "Updating..." : "Update Password"}
+      </button>
     </form>
   );
 } 

@@ -3,13 +3,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookingForm } from "@/app/services/[id]/booking-form";
 import { getServiceWithDetails } from "@/lib/mock-data";
+import { createServerClient } from "@/lib/supabase/server";
+
+// Use consistent ParamsType across pages
+type ParamsType = Promise<{ id: string }>;
 
 type Props = {
-  params: { id: string };
+  params: ParamsType;
 };
 
-export function generateMetadata({ params }: Props): Metadata {
-  const service = getServiceWithDetails(params.id);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const service = getServiceWithDetails(id);
   
   if (!service) {
     return {
@@ -24,11 +29,34 @@ export function generateMetadata({ params }: Props): Metadata {
   };
 }
 
-export default function BookingPage({ params }: Props) {
-  const service = getServiceWithDetails(params.id);
+export default async function BookingPage({ params }: Props) {
+  const { id } = await params;
+  const service = getServiceWithDetails(id);
   
   if (!service) {
     return notFound();
+  }
+
+  // Get current user (if logged in)
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id;
+  
+  // Get user profile if logged in
+  let userProfile = null;
+  if (userId) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, firstName, lastName, displayName, email")
+      .eq("userId", userId)
+      .single();
+      
+    if (profile) {
+      userProfile = {
+        ...profile,
+        displayName: profile.displayName || undefined
+      };
+    }
   }
   
   return (
@@ -53,7 +81,11 @@ export default function BookingPage({ params }: Props) {
         
         <div className="grid gap-6 md:grid-cols-5">
           <div className="md:col-span-3">
-            <BookingForm service={service} />
+            <BookingForm 
+              service={service} 
+              userId={userId} 
+              userProfile={userProfile || undefined}
+            />
           </div>
           
           <div className="md:col-span-2">

@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Service } from "@vibewell/types";
+import { Service, BookingStatus } from "@vibewell/types";
+import { createClient } from "@/lib/supabase/client";
+import { BookingCalendar } from "@/components/services/booking-calendar";
+import { formatTime } from "@vibewell/utils";
+import { sendBookingCreatedNotifications } from "@/lib/notifications/booking-notifications";
 
 interface BookingFormProps {
   service: Service & { 
@@ -12,83 +16,129 @@ interface BookingFormProps {
       firstName?: string;
       lastName?: string;
       displayName?: string;
+      email?: string;
     };
+  };
+  userId?: string;
+  userProfile?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    displayName?: string;
+    email: string;
   };
 }
 
-export function BookingForm({ service }: BookingFormProps) {
+export function BookingForm({ service, userId, userProfile }: BookingFormProps) {
   const router = useRouter();
-  const [date, setDate] = useState<string>("");
-  const [time, setTime] = useState<string>("");
+  const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
+  const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  // Format time for display (9:00 to 9:00 AM)
-  const formatTimeDisplay = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return new Date(2000, 0, 1, hours, minutes).toLocaleTimeString('en-US', { 
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true 
-    });
+  // Handle time slot selection
+  const handleTimeSlotSelect = (startTime: Date, endTime: Date) => {
+    setSelectedStartTime(startTime);
+    setSelectedEndTime(endTime);
   };
-
-  // Generate time slots
-  const generateTimeSlots = () => {
-    const slots = [];
-    const startHour = 9; // 9 AM
-    const endHour = 17; // 5 PM
-    const interval = 30; // 30-minute intervals
-
-    for (let hour = startHour; hour <= endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += interval) {
-        // Don't add slots that would end after business hours
-        const slotDurationInMinutes = service.duration;
-        const slotEndMinute = minute + slotDurationInMinutes;
-        const slotEndHour = hour + Math.floor(slotEndMinute / 60);
-        const slotEndMinuteNormalized = slotEndMinute % 60;
-        
-        if (slotEndHour < endHour || (slotEndHour === endHour && slotEndMinuteNormalized === 0)) {
-          const formattedHour = hour.toString().padStart(2, '0');
-          const formattedMinute = minute.toString().padStart(2, '0');
-          slots.push(`${formattedHour}:${formattedMinute}`);
-        }
-      }
-    }
-    
-    return slots;
-  };
-
-  const timeSlots = generateTimeSlots();
-
-  // Disable past dates
-  const today = new Date();
-  const minDate = today.toISOString().split("T")[0];
-
-  // Calculate max date (60 days in advance)
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + 60);
-  const maxDateString = maxDate.toISOString().split("T")[0];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!date || !time) {
+    if (!selectedStartTime || !selectedEndTime) {
       toast.error("Please select a date and time");
+      return;
+    }
+
+    if (!service.provider?.id) {
+      toast.error("Provider information is missing");
+      return;
+    }
+
+    if (!userId) {
+      // If user is not logged in, redirect to login page
+      toast.error("Please log in to book this service");
+      router.push(`/auth/login?redirect=/services/${service.id}`);
       return;
     }
 
     setLoading(true);
 
     try {
-      // Simulate booking creation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const supabase = createClient();
       
-      toast.success("Booking created successfully");
+      // Get current user profile ID if not provided
+      let profileId = userProfile?.id;
       
-      // Redirect to payment page (for demo purposes)
-      const mockBookingId = Math.random().toString(36).substring(2, 10);
-      router.push(`/bookings/${mockBookingId}/payment`);
+      if (!profileId) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, firstName, lastName, displayName, email")
+          .eq("userId", userId)
+          .single();
+          
+        if (!profileData) {
+          throw new Error("User profile not found");
+        }
+        
+        profileId = profileData.id;
+        // Convert null to undefined for displayName to match the type
+        userProfile = {
+          ...profileData,
+          displayName: profileData.displayName || undefined
+        };
+      }
+      
+      // Create booking in database
+      const { data: booking, error } = await supabase
+        .from("bookings")
+        .insert({
+          serviceId: service.id,
+          providerId: service.provider.id,
+          customerId: profileId,
+          status: BookingStatus.PENDING,
+          startTime: selectedStartTime.toISOString(),
+          endTime: selectedEndTime.toISOString(),
+          price: service.price,
+          notes: notes || null,
+        })
+        .select("id")
+        .single();
+        
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Send notifications to provider
+      if (service.provider.email && userProfile) {
+        const providerName = service.provider.displayName || 
+          `${service.provider.firstName || ''} ${service.provider.lastName || ''}`;
+        const customerName = userProfile.displayName || 
+          `${userProfile.firstName} ${userProfile.lastName}`;
+        
+        await sendBookingCreatedNotifications(supabase, {
+          bookingId: booking.id,
+          providerId: service.provider.id,
+          customerId: profileId,
+          serviceName: service.title,
+          startTime: selectedStartTime,
+          endTime: selectedEndTime,
+          price: service.price,
+          customerName,
+          providerName,
+          customerEmail: userProfile.email,
+          providerEmail: service.provider.email,
+          customerFirstName: userProfile.firstName,
+          providerFirstName: service.provider.firstName || providerName.split(' ')[0],
+          status: BookingStatus.PENDING,
+          notes: notes || undefined,
+        });
+      }
+      
+      toast.success("Booking request submitted successfully");
+      
+      // Redirect to payment page
+      router.push(`/bookings/${booking.id}/payment`);
     } catch (error: any) {
       toast.error(error.message || "Failed to create booking");
     } finally {
@@ -111,50 +161,28 @@ export function BookingForm({ service }: BookingFormProps) {
 
       <div className="border-t border-b py-6 space-y-6">
         <div className="space-y-2">
-          <label
-            htmlFor="date"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Select Date
+          <label className="text-sm font-medium leading-none">
+            Select Date & Time
           </label>
-          <input
-            id="date"
-            type="date"
-            min={minDate}
-            max={maxDateString}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            required
+          <BookingCalendar
+            serviceId={service.id}
+            providerId={service.provider?.id || ""}
+            serviceDuration={service.duration}
+            onTimeSlotSelect={handleTimeSlotSelect}
+            selectedTimeSlot={
+              selectedStartTime && selectedEndTime
+                ? { startTime: selectedStartTime, endTime: selectedEndTime }
+                : undefined
+            }
           />
-          <p className="text-xs text-muted-foreground mt-1">You can book up to 60 days in advance</p>
-        </div>
-
-        <div className="space-y-2">
-          <label
-            htmlFor="time"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Select Time
-          </label>
-          <select
-            id="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            required
-            disabled={!date}
-          >
-            <option value="">Select a time</option>
-            {timeSlots.map((timeSlot) => (
-              <option key={timeSlot} value={timeSlot}>
-                {formatTimeDisplay(timeSlot)}
-              </option>
-            ))}
-          </select>
           
-          {!date && (
-            <p className="text-xs text-muted-foreground mt-1">Please select a date first</p>
+          {selectedStartTime && selectedEndTime && (
+            <div className="mt-4 p-3 bg-primary/10 rounded-md">
+              <p className="text-sm font-medium">Selected Time:</p>
+              <p className="text-sm">
+                {selectedStartTime.toLocaleDateString()} at {formatTime(selectedStartTime)} - {formatTime(selectedEndTime)}
+              </p>
+            </div>
           )}
         </div>
         
@@ -178,7 +206,7 @@ export function BookingForm({ service }: BookingFormProps) {
 
       <button
         type="submit"
-        disabled={loading || !date || !time}
+        disabled={loading || !selectedStartTime || !selectedEndTime}
         className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
       >
         {loading ? "Processing..." : "Book Appointment"}

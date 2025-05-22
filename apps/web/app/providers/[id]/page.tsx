@@ -4,12 +4,16 @@ import { notFound } from "next/navigation";
 import { ServiceCard } from "@/components/services/service-card";
 import { providers, services } from "@/lib/mock-data";
 
+// Use consistent ParamsType across pages
+type ParamsType = Promise<{ id: string }>;
+
 type Props = {
-  params: { id: string };
+  params: ParamsType;
 };
 
-export function generateMetadata({ params }: Props): Metadata {
-  const provider = providers.find(p => p.id === params.id);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const provider = providers.find(p => p.id === id);
   
   if (!provider) {
     return {
@@ -24,8 +28,9 @@ export function generateMetadata({ params }: Props): Metadata {
   };
 }
 
-export default function ProviderDetailPage({ params }: Props) {
-  const provider = providers.find(p => p.id === params.id);
+export default async function ProviderDetailPage({ params }: Props) {
+  const { id } = await params;
+  const provider = providers.find(p => p.id === id);
   
   if (!provider) {
     return notFound();
@@ -86,7 +91,15 @@ export default function ProviderDetailPage({ params }: Props) {
           </div>
           
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Services</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold">Services</h2>
+              <Link
+                href={`/booking/provider/${provider.id}`}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                View Available Time Slots
+              </Link>
+            </div>
             {providerServices.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {providerServices.map((service) => (

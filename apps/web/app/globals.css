@@ -63,3 +63,34 @@
     @apply font-sans;
   }
 } 
+
+@layer components {
+  /* Modern card styles for consistent design across the application */
+  .card-modern {
+    @apply bg-white/30 backdrop-blur-md border border-white/20 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden transition-all duration-300;
+  }
+  
+  .card-modern-hover {
+    @apply hover:translate-y-[-5px] hover:shadow-[0_10px_40px_rgb(0,0,0,0.15)];
+  }
+  
+  .card-modern-badge {
+    @apply inline-flex items-center rounded-full bg-secondary/50 backdrop-blur-sm px-2.5 py-1 text-xs font-medium shadow-sm;
+  }
+  
+  .card-modern-badge-primary {
+    @apply inline-flex items-center rounded-full bg-primary/80 backdrop-blur-sm px-3 py-1 text-xs font-medium text-white shadow-sm;
+  }
+  
+  .card-modern-button {
+    @apply inline-flex h-10 items-center justify-center rounded-lg bg-primary/90 hover:bg-primary px-4 text-sm font-medium text-white shadow-sm hover:shadow-md transition-all;
+  }
+  
+  .card-modern-button-secondary {
+    @apply inline-flex h-10 items-center justify-center rounded-lg border border-input bg-background/50 backdrop-blur-sm px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-foreground transition-all;
+  }
+  
+  .card-floating-header {
+    @apply bg-white/30 backdrop-blur-md rounded-xl border border-white/20 shadow-lg p-4 mb-8;
+  }
+} 

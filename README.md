@@ -1,176 +1,327 @@
 # VibeWell
 
-A cutting-edge beauty and wellness platform combining service booking capabilities with social networking features. VibeWell empowers users to discover, book, and manage beauty and wellness services while connecting with providers and other users through a modern social media experience.
+A comprehensive beauty and wellness platform integrating service booking, e-commerce, social networking, training, and AI-powered personalization. VibeWell empowers consumers and professionals to connect, transact, and grow within a single unified experience.
 
 ## Vision
 
-VibeWell aims to revolutionize the beauty and wellness industry by creating a comprehensive ecosystem where:
+VibeWell is transforming the beauty and wellness landscape by offering a full-featured ecosystem where:
 
-- **Service Providers** can showcase their expertise, build a client base, sell products, and offer online training
-- **Customers** can discover top-rated services, book appointments seamlessly, connect with like-minded individuals, and access personalized recommendations
-- **Community** thrives through social interactions, reviews, and knowledge sharing
+* **Service Providers** (Businesses & Freelancers) can showcase services, sell products, host training, and manage their brand.
+* **Customers** can discover tailored beauty and wellness services, book with ease, shop curated products, and access exclusive content.
+* **Community** grows through personalised feeds, feedback, AI recommendations, and engaging social features.
 
-The platform is designed with a focus on user experience, performance, and scalability, adhering to modern development practices and architectural patterns.
+The platform prioritises simplicity, performance, and scalability using modern development principles and a robust modular architecture.
+
+## Platform Strategy
+
+VibeWell operates with a **mobile-first approach** through a dual-platform strategy:
+
+- **Mobile App**: Primary interface for end-users/consumers to discover, book, and interact with service providers. All consumer-facing features are optimized for the mobile experience.
+- **Web App**: Focused on provider management features, administrative functions, and marketing content. The web version offers comprehensive business tools for service providers rather than duplicating the consumer experience.
+
+This approach ensures the best user experience for each audience while maintaining development efficiency.
 
 ## Development Principles
 
-- **KISS (Keep It Simple, Stupid)**: Prefer simple solutions over complex ones
-- **YAGNI (You Aren't Gonna Need It)**: Implement features only when explicitly required
-- **DRY (Don't Repeat Yourself)**: Create reusable components and centralize business logic
-- **SOLID Principles**: Maintain single responsibility, extensibility, and proper abstractions
-- **Fail Fast**: Implement robust validation and meaningful error handling
+* **KISS**: Keep the experience simple and intuitive
+* **YAGNI**: Build what's needed, avoid premature features
+* **DRY**: Centralised, reusable code and logic
+* **SOLID**: Scalable and maintainable system architecture
+* **Fail Fast**: Surface and handle errors early and clearly
 
 ## Project Structure
 
-This is a monorepo managed with Turborepo and PNPM workspaces:
+Monorepo managed with Turborepo + PNPM Workspaces:
 
-- `apps/web`: Next.js web application
-- `packages/database`: Database setup and access layer with Prisma and Supabase
-- `packages/ui`: Shared UI components
-- `packages/config`: Shared configuration files
-- `packages/utils`: Shared utility functions
-- `packages/types`: Shared TypeScript types
+* `apps/web`: Admin dashboard and desktop-only interface (Next.js)
+* `apps/mobile`: Cross-platform mobile app (React Native)
+* `packages/database`: Supabase schema, Prisma ORM
+* `packages/ui`: Reusable design system and component library
+* `packages/config`: Shared linting, tsconfig, and environment settings
+* `packages/utils`: Utility functions
+* `packages/types`: Global TypeScript type definitions
+
+## Platform Interfaces
+
+### Mobile App (`/apps/mobile/`)
+
+Primary user interface for customers/clients. Includes all consumer-facing features:
+
+* User authentication
+* Service provider discovery
+* Booking appointments
+* Payments
+* Messaging with providers
+* Profile management
+* Reviews and ratings
+* AI recommendations
+* Social features
+
+### Web App (`/apps/web/`)
+
+Provider and admin interface:
+
+* Business dashboard for service providers
+* Appointment management
+* Revenue tracking
+* Service listing management
+* Customer management
+* Analytics and reporting
+
+Marketing and acquisition:
+
+* Landing pages
+* Marketing content
+* Provider sign-up
+* Blog/content
+
+Limited consumer features:
+
+* Basic account management
+* Viewing booking history
+* Not a full-featured client experience
 
 ## Technical Architecture
 
-### Frontend
-- **Framework**: Next.js 15 with App Router and TypeScript
-- **Styling**: Tailwind CSS with ShadCN components
-- **State Management**: 
-  - React Context for global state (auth, theme)
-  - Server Components for data fetching
-  - SWR/React Query for client-side data management
+### Web (Admin Panel)
 
-### Backend
-- **Database**: PostgreSQL via Supabase with Row-Level Security
-- **Authentication**: Supabase Auth with JWT
-- **ORM**: Prisma for type-safe database access
-- **Realtime**: Supabase Realtime for chat and notifications
-- **Storage**: Supabase Storage for media files
-- **Serverless**: Vercel Edge Functions for API endpoints
+* **Framework**: Next.js 15 with App Router and Server Components
+* **UI**: Tailwind CSS + ShadCN
+* **State**: React Context + SWR
+* **Auth**: Supabase Auth
+* **Hosting**: Vercel (SSR + API routes)
 
-### Security Features
-- **Authentication**: JWT-based auth with proper refresh mechanisms
-- **Authorization**: Role-based access control
-- **Data Protection**: Row-Level Security policies for all tables
-- **API Security**: Rate limiting, CORS protection, input validation
+### Mobile App
+
+* **Framework**: Expo + React Native
+* **UI/UX**: Custom component library with Tailwind-style utility classes
+* **Navigation**: React Navigation
+* **State**: Zustand for lightweight store
+* **Forms**: React Hook Form + Zod/Yup
+* **API**: Supabase client + Axios
+
+### Backend (Supabase)
+
+* **Auth**: Supabase email, social, and optional Web3
+* **DB**: PostgreSQL with RLS (via Supabase)
+* **ORM**: Prisma
+* **Realtime**: Supabase Realtime
+* **Storage**: Supabase Storage
+* **Functions**: Supabase Edge Functions
+
+### APIs & Services
+
+* **Payments**: Stripe + Coinbase Commerce
+* **AI**: GPT-4 (OpenAI) or Claude (Anthropic) for suggestions, personalization, and chat
+* **Chat/Messaging**: Stream or Sendbird
+* **Video**: Vimeo/Mux SDKs
+* **Notifications**: Firebase Cloud Messaging
+* **Search**: Algolia
+* **Email**: Resend
+* **SMS**: Twilio
+* **Analytics**: Mixpanel
+* **Referrals**: FirstPromoter
+
+### DevOps
+
+* **CI/CD**: GitHub Actions + Expo EAS + Vercel
+* **Monitoring**: Sentry + LogRocket
+* **Testing**: Jest, React Native Testing Library, and Cypress (for web)
+
+### Security
+
+* JWT auth with refresh tokens
+* Role-based access (RLS policies)
+* CORS, rate-limiting, input validation
+* Secure environment segregation
+
+## Mobile App Layouts
+
+### Onboarding
+
+* Splash
+* Intro Carousel
+* Login / Signup / MFA
+* Email Verification / Forgot Password
+* Role Select: Consumer / Provider
+* Preferences: Skin, Goals, Style
+
+### Core Navigation
+
+* Home (Consumer)
+  * Recommended Services
+  * Quick Book / Browse
+* Home (Pro)
+  * Dashboard, Calendar, Earnings, Inbox
+
+### Booking
+
+* Search / Filter
+* Service Provider Profile
+* Packages / Pricing
+* Book & Pay (Stripe/Crypto)
+* Confirmation + Follow-up
+
+### E-Commerce
+
+* Browse Products
+* Product Detail
+* Cart
+* Checkout
+* Track Orders
+
+### Profiles
+
+* My Profile / Edit
+* My Bookings / Orders / Subscriptions
+* Settings / Support / Referrals
+
+### Training
+
+* Library
+* Course Detail
+* Enroll + Video Player
+* Upload (Pro only)
+
+### Subscriptions
+
+* Premium Content Feed
+* Article / Video View
+* Subscribe / Unlock
+
+### Pro Tools
+
+* Dashboard + Calendar
+* Manage Bookings, Products, Services
+* Withdraw Earnings
+* Client Messaging
+* Upload Courses / Content
+* Feedback & Reviews
+
+### Admin
+
+* Admin Portal
+* User/Provider Management
+* Reports / Commissions
+* Content Moderation
+* Feature Flags
 
 ## Design System
 
-### Color System
-- **Primary**: #4CAF50 (Green)
-- **Secondary**: #F5F5DC (Beige)
-- **Accent**: #FF5722 (Orange)
-- **Neutral**: #F5F5F5 to #212121 (Gray scale)
-- **Semantic**:
-  - Success: #4CAF50
-  - Warning: #FFC107
-  - Error: #F44336
-  - Info: #2196F3
+### Colors
+
+* Primary: #4CAF50 (Green)
+* Secondary: #F5F5DC (Beige)
+* Accent: #FF5722 (Orange)
+* Neutral: #F5F5F5 to #212121 (Gray scale)
+* Semantic:
+  * Success: #4CAF50
+  * Warning: #FFC107
+  * Error: #F44336
+  * Info: #2196F3
 
 ### Typography
-- **Headings**: Raleway (Bold)
-  - H1: 32px/36px
-  - H2: 24px/28px
-  - H3: 20px/24px
-- **Body**: Inter
-  - Regular: 16px/24px
-  - Small: 14px/20px
+
+* Headings: Raleway
+  * H1: 32px/36px
+  * H2: 24px/28px
+  * H3: 20px/24px
+* Body: Inter
+  * Regular: 16px/24px
+  * Small: 14px/20px
 
 ### Spacing
-- Base unit: 4px
-- Scale: 4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px
 
-## Key Features
+* Base unit: 4px
+* Scale: 4px to 64px in standard increments
 
-### Phase 1-3 (Core Platform)
-- User authentication and profile management
-- Service provider onboarding and listing management
-- Booking system with calendar integration
-- Secure payment processing
-- Review and rating system
+## Feature Roadmap
 
-### Phase 4-6 (Enhanced Capabilities)
-- E-commerce storefront for physical products
-- Online training modules and courses
-- Social feed with posts, likes, and comments
-- Messaging between users and providers
-- Loyalty and rewards system
-- Virtual try-on features
+### Phase 1–3: Core
 
-### Phase 7-8 (Optimization & Growth)
-- Analytics and insights dashboard
-- Multi-language support
-- Advanced search and filtering
-- Mobile-first optimizations
-- Accessibility enhancements
+* Signup/Login/Auth
+* Provider Onboarding
+* Booking & Scheduling
+* Payments (Stripe + Crypto)
+* Ratings & Reviews
+
+### Phase 4–6: Expansion
+
+* E-Commerce Storefront
+* Online Training
+* Messaging
+* Loyalty & Rewards
+* Social Feed
+* Virtual Try-On (Planned)
+
+### Phase 7–8: Optimization
+
+* Admin Dashboard
+* Analytics + Reports
+* Accessibility + i18n
+* Performance Optimization
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js >= 18
-- PNPM 8.6.0 or higher
-- Supabase account
+* Node.js >= 18
+* PNPM >= 8.6
+* Supabase Project
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/vibewell.git
 cd vibewell
-
-# Install dependencies
 pnpm install
-
-# Setup environment variables
 cp .env.example .env.local
-
-# Start development server
 pnpm dev
 ```
 
 ### Database Setup
 
 ```bash
-# Generate Prisma client
 pnpm --filter @vibewell/database generate
-
-# Run migrations
 pnpm --filter @vibewell/database migrate:dev
 ```
 
-## Third-Party Integrations
+## Integrations
 
-- **Supabase**: Database, auth, storage, and realtime
-- **Vercel**: Hosting and serverless functions
-- **Stripe**: Payment processing
-- **SendGrid/Resend**: Email delivery
-- **Sentry**: Error tracking
-- **Cloudinary**: Image processing
-- **Twilio**: SMS notifications
-- **Algolia**: Search functionality
-- **OpenAI API**: AI recommendations
+* Supabase
+* Vercel
+* Stripe + Coinbase Commerce
+* OpenAI / Anthropic
+* Sendbird / Stream
+* Cloudinary
+* Twilio
+* Resend
+* Algolia
+* Sentry / LogRocket
+* Mixpanel
+* FirstPromoter
 
-## Commands
+## Common Commands
 
-- `pnpm dev` - Start the development server
-- `pnpm build` - Build all packages and applications
-- `pnpm lint` - Run linting for all packages
-- `pnpm format` - Format all files with Prettier
-- `pnpm test` - Run tests
-- `pnpm clean` - Clean all build artifacts and node_modules
+```bash
+pnpm dev       # Start dev mode
+pnpm build     # Full build
+pnpm lint      # Run linter
+pnpm format    # Prettier format
+pnpm test      # Unit tests
+pnpm clean     # Cleanup node_modules/builds
+```
 
-## Domain Information
+## Domain Setup
 
-- **Primary Domain**: getvibewell.com
-- **Subdomains**:
-  - app.getvibewell.com (main application)
-  - api.getvibewell.com (API endpoints)
-  - admin.getvibewell.com (admin portal)
-  - docs.getvibewell.com (documentation)
-  - blog.getvibewell.com (content marketing)
+* Primary: getvibewell.com
+* Subdomains:
+  * app.getvibewell.com (PWA / Mobile App)
+  * admin.getvibewell.com (Admin Dashboard)
+  * api.getvibewell.com (APIs)
+  * docs.getvibewell.com (Documentation)
+  * blog.getvibewell.com (Blog/SEO)
 
 ## Contributing
 
-Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for collaboration guidelines.

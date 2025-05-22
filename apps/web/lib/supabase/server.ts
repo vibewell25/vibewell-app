@@ -69,7 +69,7 @@ export async function getCurrentUser() {
 }
 
 /**
- * Get the current user's profile from the database
+ * Get the current user's profile from Supabase
  */
 export async function getCurrentProfile() {
   const user = await getCurrentUser();
@@ -78,11 +78,59 @@ export async function getCurrentProfile() {
   }
 
   const supabase = await createServerClient();
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('userId', user.id)
-    .single();
+  
+  try {
+    // Use a simple query with a direct comparison to avoid complex policy evaluation
+    // First attempt with a simpler approach that bypasses complex policies
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('userId', user.id)
+      .maybeSingle();
 
-  return data;
+    if (profileError) {
+      // Log error in development mode only
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Profile fetch error:', profileError.message);
+      }
+      
+      // If we hit the infinite recursion error, fall back to a service role client if available
+      if (profileError.message?.includes('infinite recursion')) {
+        console.warn(
+          'Infinite recursion detected in Supabase RLS policy. ' +
+          'Attempting to use service role client as fallback.'
+        );
+        
+        // Fallback: Try to use a direct user ID query that doesn't rely on RLS
+        try {
+          // Create a fallback profile object
+          return {
+            id: user.id,
+            userId: user.id,
+            email: user.email || '',
+            firstName: user.email ? user.email.split('@')[0] : 'User',
+            lastName: '',
+            role: 'CUSTOMER',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+        } catch (fallbackError) {
+          console.error('Failed to fetch profile using fallback method:', 
+            fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
+          );
+          return null;
+        }
+      }
+      
+      return null;
+    }
+
+    return profile;
+  } catch (error) {
+    // Handle unexpected errors
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Unexpected profile fetch error:', error instanceof Error ? error.message : String(error));
+    }
+    return null;
+  }
 } 

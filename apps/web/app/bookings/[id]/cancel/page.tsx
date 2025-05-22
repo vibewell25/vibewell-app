@@ -6,6 +6,7 @@ import { getCurrentProfile } from "@/lib/supabase/server";
 import { formatDate, formatTime } from "@vibewell/utils";
 import { BookingCancellationForm } from "@/components/bookings/booking-cancellation-form";
 import { BookingStatus, Profile, UserRole, Booking } from "@vibewell/types";
+import { safeProfileData } from "@/lib/utils";
 
 type ParamsType = Promise<{ id: string }>;
 
@@ -26,22 +27,8 @@ export default async function BookingCancellationPage({ params }: { params: Para
     redirect(`/auth/login?redirectTo=/bookings/${id}/cancel`);
   }
 
-  // Convert profileData to Profile type
-  const profile: Profile = {
-    ...profileData,
-    role: profileData.role as UserRole,
-    createdAt: new Date(profileData.createdAt),
-    updatedAt: new Date(profileData.updatedAt),
-    displayName: profileData.displayName || undefined,
-    bio: profileData.bio || undefined,
-    avatarUrl: profileData.avatarUrl || undefined,
-    phone: profileData.phone || undefined,
-    address: profileData.address || undefined,
-    city: profileData.city || undefined,
-    state: profileData.state || undefined,
-    zipCode: profileData.zipCode || undefined,
-    country: profileData.country || undefined,
-  };
+  // Convert profileData to Profile type using our utility function
+  const profile: Profile = safeProfileData(profileData);
 
   // Fetch booking with related service and provider details
   const { data: bookingData } = await supabase

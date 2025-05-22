@@ -2,25 +2,52 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Define a list of public routes that don't require authentication
-const publicRoutes = [
-  '/',
-  '/auth/login',
-  '/auth/signup',
-  '/auth/verify',
-  '/auth/forgot-password',
-  '/auth/reset-password',
-  '/terms',
-  '/privacy',
-  '/about',
+// Development mode flag - set to true to disable redirects during development
+const DEV_MODE = true;
+
+// Routes that are primarily for consumers and should redirect to the mobile app
+const CONSUMER_ROUTES = [
+  '/services',
+  '/providers',
+  '/booking',
+  '/bookings',
+  '/profile',
+  '/search',
+  '/cart',
+  '/checkout',
+  '/reviews',
+  '/messages',
+  '/social',
+  '/virtual-tryon',
+  '/rewards',
+  '/notifications',
+  '/courses',
+  '/learning',
 ]
 
-// Define routes that require authentication
-// If a user is authenticated and tries to access auth routes, redirect to dashboard
-const authRoutes = [
-  '/auth/login',
-  '/auth/signup',
-  '/auth/forgot-password',
+// Routes that should be fully accessible on web without redirection
+const ALLOWED_WEB_ROUTES = [
+  '/',
+  '/about',
+  '/download',
+  '/auth',
+  '/provider',
+  '/admin',
+  '/dashboard',
+  '/api',
+]
+
+// Paths that start with these will be allowed without redirection
+const ALLOWED_WEB_PREFIXES = [
+  '/provider/',
+  '/admin/',
+  '/auth/',
+  '/api/',
+  '/dashboard/',
+  '/_next/',
+  '/fonts/',
+  '/images/',
+  '/assets/',
 ]
 
 /**
@@ -32,53 +59,43 @@ export async function middleware(req: NextRequest) {
   try {
     const supabase = createMiddlewareClient({ req, res })
     
-    // Check if we have a session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
+    // Skip redirect logic entirely in development mode
+    if (DEV_MODE) {
+      // Early return to completely bypass redirection logic in development
+      return res;
+    }
+    
+    // Check if the path should redirect to mobile app
     const path = req.nextUrl.pathname
     
-    // If user is signed in and tries to access auth page, redirect to dashboard
-    if (session && authRoutes.some(route => path.startsWith(route))) {
-      const redirectUrl = new URL('/dashboard', req.url)
-      return NextResponse.redirect(redirectUrl)
+    // Check if this is a direct match for consumer routes
+    const isConsumerRoute = CONSUMER_ROUTES.includes(path)
+    
+    // Check if this is a match for allowed web routes
+    const isAllowedWebRoute = ALLOWED_WEB_ROUTES.includes(path)
+    
+    // Check if this is a prefix match for allowed web paths
+    const hasAllowedPrefix = ALLOWED_WEB_PREFIXES.some(prefix => 
+      path.startsWith(prefix)
+    )
+    
+    // If this is a consumer route and not an allowed web route/prefix, redirect to download page
+    if (isConsumerRoute && !isAllowedWebRoute && !hasAllowedPrefix) {
+      // We could also check for a mobile device here and just add a query param
+      // instead of redirecting, to show a banner
+      const downloadUrl = new URL('/download', req.url)
+      downloadUrl.searchParams.set('from', path)
+      return NextResponse.redirect(downloadUrl)
     }
 
-    // If no session and trying to access a protected route, redirect to login
-    if (!session && !publicRoutes.some(route => path === route || path.startsWith(route))) {
-      const redirectUrl = new URL('/auth/login', req.url)
-      // Store the original URL they were trying to visit
-      redirectUrl.searchParams.set('redirectTo', encodeURIComponent(req.url))
-      return NextResponse.redirect(redirectUrl)
-    }
+    // Refresh session if available
+    const { data: { session } } = await supabase.auth.getSession()
+
+    return res
   } catch (error) {
-    // Handle errors more gracefully
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    
-    // Don't log infinite recursion errors (they're noisy and expected until fixed)
-    if (!errorMessage.includes('infinite recursion')) {
-      console.error('Authentication error:', errorMessage);
-    }
-    
-    // In development, if Supabase credentials are missing, allow access
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Supabase credentials missing or error in development mode.');
-      // Continue despite errors in development
-      return res;
-    } else {
-      // In production, we should still enforce authentication for non-recursion errors
-      if (!errorMessage.includes('infinite recursion')) {
-        // Redirect to a static error page
-        const errorUrl = new URL('/error', req.url)
-        return NextResponse.redirect(errorUrl)
-      }
-      // For recursion errors, just continue
-      return res;
-    }
+    console.error('Middleware error:', error)
+    return res
   }
-  
-  return res
 }
 
 // Configure which paths the middleware should run on

@@ -4,6 +4,9 @@ import { createServerClient } from "@/lib/supabase/server";
 import { PaymentForm } from "@/components/services/payment-form";
 import { BookingStatus } from "@vibewell/types";
 
+// Add type for params
+type ParamsType = Promise<{ id: string }>;
+
 export const metadata: Metadata = {
   title: "Payment | VibeWell",
   description: "Complete your booking payment",
@@ -12,8 +15,9 @@ export const metadata: Metadata = {
 export default async function BookingPaymentPage({
   params,
 }: {
-  params: { id: string };
+  params: ParamsType;
 }) {
+  const { id } = await params;
   const supabase = await createServerClient();
   
   // Get current user
@@ -30,7 +34,7 @@ export default async function BookingPaymentPage({
       service:services(title, price),
       customer:profiles!bookings_customerId_fkey(id, userId)
     `)
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
   
   if (!booking) {
@@ -50,7 +54,7 @@ export default async function BookingPaymentPage({
   
   // Check if the booking is not already paid or completed
   if (booking.status !== BookingStatus.PENDING) {
-    redirect(`/bookings/${params.id}`);
+    redirect(`/bookings/${id}`);
   }
   
   return (

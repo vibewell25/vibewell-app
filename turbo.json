@@ -6,6 +6,14 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
+    "build:android": {
+      "dependsOn": ["^build"],
+      "outputs": ["apps/mobile/android/**"]
+    },
+    "build:ios": {
+      "dependsOn": ["^build"],
+      "outputs": ["apps/mobile/ios/**"]
+    },
     "lint": {
       "outputs": []
     },

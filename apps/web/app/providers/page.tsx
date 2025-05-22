@@ -11,17 +11,17 @@ export default function ProvidersPage() {
   const providersWithServices = getProvidersWithServices();
 
   return (
-    <div className="container py-10">
+    <div className="container max-w-7xl py-12">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Service Providers</h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mt-2">
           Browse our verified beauty and wellness professionals
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {providersWithServices.map((provider) => (
-          <div key={provider.id} className="rounded-lg border bg-card shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+          <div key={provider.id} className="card-modern card-modern-hover">
             <div className="h-40 bg-primary/10 relative">
               {provider.avatarUrl ? (
                 <img
@@ -48,13 +48,13 @@ export default function ProvidersPage() {
                 {provider.bio || "Beauty and wellness professional"}
               </p>
               
-              <div className="mt-4 flex flex-col gap-2">
-                <div className="text-sm">
-                  <span className="font-medium">Services:</span> {provider.services?.length || 0}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <div className="card-modern-badge">
+                  <span>{provider.services?.length || 0} Services</span>
                 </div>
                 {provider.city && provider.state && (
-                  <div className="text-sm">
-                    <span className="font-medium">Location:</span> {provider.city}, {provider.state}
+                  <div className="card-modern-badge">
+                    <span>{provider.city}, {provider.state}</span>
                   </div>
                 )}
               </div>
@@ -62,7 +62,7 @@ export default function ProvidersPage() {
               <div className="mt-6">
                 <Link
                   href={`/providers/${provider.id}`}
-                  className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+                  className="card-modern-button w-full"
                 >
                   View Profile
                 </Link>

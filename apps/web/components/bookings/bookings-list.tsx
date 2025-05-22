@@ -121,16 +121,14 @@ export function BookingsList({ initialBookings }: BookingsListProps) {
       </div>
 
       {sortedBookings.length === 0 ? (
-        <div className="rounded-lg border bg-card p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+        <div className="card-modern p-8 text-center">
+          <div className="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
               fill="none"
+              viewBox="0 0 24 24"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth={1.5}
               strokeLinecap="round"
               strokeLinejoin="round"
               className="h-6 w-6 text-primary"
@@ -150,7 +148,7 @@ export function BookingsList({ initialBookings }: BookingsListProps) {
           {activeTab === "upcoming" && (
             <Link
               href="/services"
-              className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              className="card-modern-button"
             >
               Book a Service
             </Link>
@@ -246,7 +244,7 @@ function BookingCard({ booking }: { booking: Booking }) {
   const startTime = new Date(booking.startTime);
   
   return (
-    <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+    <div className="card-modern card-modern-hover">
       <div className="p-6 space-y-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -281,14 +279,14 @@ function BookingCard({ booking }: { booking: Booking }) {
         <div className="space-y-2">
           <Link
             href={`/bookings/${booking.id}`}
-            className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+            className="card-modern-button w-full"
           >
             View Details
           </Link>
           {(booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) && (
             <Link
               href={`/bookings/${booking.id}/cancel`}
-              className="inline-flex w-full items-center justify-center rounded-md border px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent"
+              className="card-modern-button-secondary w-full"
             >
               Cancel Booking
             </Link>
@@ -305,29 +303,29 @@ function StatusBadge({ status }: { status: BookingStatus }) {
   
   switch (status) {
     case BookingStatus.PENDING:
-      bgColor = "bg-yellow-100";
+      bgColor = "bg-yellow-100/70";
       textColor = "text-yellow-800";
       break;
     case BookingStatus.CONFIRMED:
-      bgColor = "bg-blue-100";
+      bgColor = "bg-blue-100/70";
       textColor = "text-blue-800";
       break;
     case BookingStatus.COMPLETED:
-      bgColor = "bg-green-100";
+      bgColor = "bg-green-100/70";
       textColor = "text-green-800";
       break;
     case BookingStatus.CANCELLED:
-      bgColor = "bg-red-100";
+      bgColor = "bg-red-100/70";
       textColor = "text-red-800";
       break;
     case BookingStatus.NO_SHOW:
-      bgColor = "bg-gray-100";
+      bgColor = "bg-gray-100/70";
       textColor = "text-gray-800";
       break;
   }
   
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${bgColor} ${textColor}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${bgColor} ${textColor} backdrop-blur-sm shadow-sm`}>
       {status}
     </span>
   );

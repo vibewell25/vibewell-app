@@ -5,15 +5,10 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { formatDate, formatTime, formatCurrency } from "@vibewell/utils";
 import { BookingStatus, Profile, UserRole, Service } from "@vibewell/types";
-import dynamic from "next/dynamic";
+import BookingMap from "@/components/bookings/booking-map";
+import { safeProfileData } from "@/lib/utils";
 
 type ParamsType = Promise<{ id: string }>;
-
-// Dynamically import the map component with SSR disabled
-const ServiceMapNoSSR = dynamic(
-  () => import("@/components/services/service-map").then(mod => ({ default: mod.ServiceMap })),
-  { ssr: false }
-);
 
 // Helper function to prepare service for map display
 function prepareServiceForMap(service: Service, provider: any) {
@@ -49,22 +44,8 @@ export default async function BookingDetailsPage({ params }: { params: ParamsTyp
     redirect(`/auth/login?redirectTo=/bookings/${id}`);
   }
 
-  // Convert profileData to Profile type
-  const profile: Profile = {
-    ...profileData,
-    role: profileData.role as UserRole,
-    createdAt: new Date(profileData.createdAt),
-    updatedAt: new Date(profileData.updatedAt),
-    displayName: profileData.displayName || undefined,
-    bio: profileData.bio || undefined,
-    avatarUrl: profileData.avatarUrl || undefined,
-    phone: profileData.phone || undefined,
-    address: profileData.address || undefined,
-    city: profileData.city || undefined,
-    state: profileData.state || undefined,
-    zipCode: profileData.zipCode || undefined,
-    country: profileData.country || undefined,
-  };
+  // Convert profileData to Profile type using our utility function
+  const profile: Profile = safeProfileData(profileData);
 
   // Fetch booking with related service and provider details
   const { data: bookingData } = await supabase
@@ -254,18 +235,16 @@ export default async function BookingDetailsPage({ params }: { params: ParamsTyp
                     <h3 className="font-medium">
                       {booking.provider.displayName || `${booking.provider.firstName} ${booking.provider.lastName}`}
                     </h3>
-                    <Link
-                      href={`/providers/${booking.provider.id}`}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      View Profile
-                    </Link>
+                    <p className="text-sm text-muted-foreground">{booking.provider.email}</p>
+                    {booking.provider.phone && (
+                      <p className="text-sm">{booking.provider.phone}</p>
+                    )}
                   </div>
                 </div>
               </>
             ) : (
               <>
-                <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
+                <h2 className="text-xl font-semibold mb-4">Customer</h2>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                     {booking.customer.avatarUrl ? (
@@ -285,9 +264,27 @@ export default async function BookingDetailsPage({ params }: { params: ParamsTyp
                     <h3 className="font-medium">
                       {booking.customer.displayName || `${booking.customer.firstName} ${booking.customer.lastName}`}
                     </h3>
+                    <p className="text-sm text-muted-foreground">{booking.customer.email}</p>
+                    {booking.customer.phone && (
+                      <p className="text-sm">{booking.customer.phone}</p>
+                    )}
                   </div>
                 </div>
               </>
+            )}
+          </div>
+          
+          <div className="space-y-4">
+            {getBookingActions()}
+            
+            {booking.status === BookingStatus.CANCELLED && booking.cancellationReason && (
+              <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+                <h3 className="font-medium text-destructive mb-1">Cancellation Reason</h3>
+                <p className="text-sm">{booking.cancellationReason}</p>
+                {booking.cancellationNotes && (
+                  <p className="text-sm mt-2">{booking.cancellationNotes}</p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -295,54 +292,47 @@ export default async function BookingDetailsPage({ params }: { params: ParamsTyp
         <div className="space-y-6">
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Location</h2>
-            <div className="rounded-md overflow-hidden">
-              <ServiceMapNoSSR 
-                services={[prepareServiceForMap(booking.service, booking.provider)]} 
-                height="300px"
-                zoom={12}
-                centerLocation={prepareServiceForMap(booking.service, booking.provider).locationId}
-              />
-            </div>
-            <p className="text-sm mt-4">
-              Service location details will be provided after booking confirmation.
-            </p>
+            <BookingMap service={prepareServiceForMap(booking.service, booking.provider)} />
           </div>
           
           <div className="rounded-lg border bg-card p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Need Assistance?</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              If you need to make changes to your booking or have any questions, please contact us.
-            </p>
-            <div className="space-y-2">
-              <a
-                href="mailto:support@vibewell.com"
-                className="text-sm text-primary hover:underline block"
-              >
-                support@vibewell.com
-              </a>
-              <p className="text-sm">
-                Phone: (555) 123-4567
-              </p>
+            <h2 className="text-xl font-semibold mb-4">What to Expect</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium">Before Your Appointment</h3>
+                <ul className="mt-2 space-y-2 text-sm">
+                  <li className="flex gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    Arrive 5-10 minutes early
+                  </li>
+                  <li className="flex gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    Bring any relevant medical information
+                  </li>
+                  <li className="flex gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    Wear comfortable clothing
+                  </li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="font-medium">Cancellation Policy</h3>
+                <p className="mt-2 text-sm">
+                  Free cancellation up to 24 hours before your appointment. Cancellations within 24 hours may be subject to a cancellation fee.
+                </p>
+              </div>
             </div>
           </div>
-          
-          {isCustomer && booking.status === BookingStatus.CONFIRMED && (
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">After Your Appointment</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Don't forget to leave a review after your service is completed.
-              </p>
-              <Link
-                href={`/services/${booking.service.id}/review?bookingId=${booking.id}`}
-                className="inline-flex items-center text-sm text-primary hover:underline"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-                Write a Review
-              </Link>
-            </div>
-          )}
         </div>
       </div>
     </div>

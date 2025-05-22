@@ -57,12 +57,9 @@ export function ThemeProvider({
     },
   };
 
-  // Cast children to avoid Next.js 15 ReactNode compatibility issues
-  const safeChildren = children as React.ReactElement;
-
   return (
     <ThemeProviderContext.Provider value={value}>
-      {safeChildren}
+      {children}
     </ThemeProviderContext.Provider>
   );
 }
