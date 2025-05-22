@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "./vercel-build.sh",
-  "installCommand": "echo 'Using custom build script instead'",
+  "buildCommand": "pnpm vercel-build",
+  "installCommand": "pnpm install",
   "framework": "nextjs",
   "outputDirectory": "apps/web/.next",
   "git": {
@@ -10,5 +10,7 @@
     }
   },
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "workspaceRoot": "apps/web"
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/apps/web/$1" }
+  ]
 } 

@@ -1,0 +1,7 @@
+.git
+node_modules
+.turbo
+
+# Don't ignore apps directory
+# !apps/
+# !apps/web/ 
