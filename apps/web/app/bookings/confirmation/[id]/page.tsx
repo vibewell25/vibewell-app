@@ -1,25 +1,17 @@
 import { Metadata } from "next";
+import BookingConfirmationClient from "./client";
 
-// Use consistent ParamsType across booking pages
-interface ParamsType {
+interface Params {
   id: string;
 }
 
-interface BookingConfirmationPageProps {
-  params: ParamsType;
-  searchParams: Record<string, string | string[] | undefined>;
-}
-
-export const generateMetadata = async ({ params }: BookingConfirmationPageProps): Promise<Metadata> => {
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   return {
     title: "Booking Confirmation | VibeWell",
     description: "Your booking has been confirmed.",
   };
-};
+}
 
-// Client Component
-import BookingConfirmationClient from "./page.client";
-
-export default function BookingConfirmationPage(props: BookingConfirmationPageProps) {
-  return <BookingConfirmationClient {...props} />;
+export default function BookingConfirmationPage({ params }: { params: Params }) {
+  return <BookingConfirmationClient id={params.id} />;
 } 

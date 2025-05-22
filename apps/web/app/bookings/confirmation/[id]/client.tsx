@@ -2,25 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { createServerClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/supabase/server";
-import { formatDate, formatTime } from "@vibewell/utils";
-import { BookingConfirmation } from "@/components/bookings/booking-confirmation";
 import { BookingStatus } from "@vibewell/types";
 import { Button } from "@/components/ui/button";
 import { services, providers } from "@/lib/mock-data";
 import { formatPrice } from "@/lib/utils";
 
-// Use consistent ParamsType across booking pages
-type ParamsType = { id: string };
-
 interface BookingConfirmationClientProps {
-  params: ParamsType;
+  id: string;
 }
 
-export default function BookingConfirmationClient({ params }: BookingConfirmationClientProps) {
-  const { id } = params;
+export default function BookingConfirmationClient({ id }: BookingConfirmationClientProps) {
   const [mockBooking, setMockBooking] = useState<any>(null);
   
   useEffect(() => {
