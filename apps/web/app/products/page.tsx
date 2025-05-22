@@ -1,15 +1,16 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import { Metadata } from "next";
-import { ProductGrid } from "@/components/products/product-grid";
-import { products } from "@/lib/mock-data";
-import { Search, Filter, Tag, Calendar, ChevronRight, Sliders, Grid, Map } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Shop Beauty Products | VibeWell",
   description: "Discover premium beauty and wellness products from top providers on VibeWell",
 };
+
+"use client";
+
+import { useState, useEffect } from "react";
+import { ProductGrid } from "@/components/products/product-grid";
+import { products } from "@/lib/mock-data";
+import { Search, Filter, Tag, Calendar, ChevronRight, Sliders, Grid, Map } from "lucide-react";
 
 export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");

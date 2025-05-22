@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -27,6 +25,8 @@ export async function generateMetadata({ params }: BookingConfirmationPageProps)
     description: "Your booking has been confirmed.",
   };
 }
+
+"use client";
 
 export default function BookingConfirmationPage({ params }: BookingConfirmationPageProps) {
   const { id } = params;
