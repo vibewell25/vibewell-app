@@ -1,16 +1,89 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ServiceCard } from "@/components/services/service-card";
 import { ServiceMap } from "@/components/services/service-map";
 import { services, categories, locations } from "@/lib/mock-data";
-import { Search, MapPin, ArrowUpDown, Star, Grid, Map } from "lucide-react";
+import { Search, MapPin, ArrowUpDown, Star, Grid, Map, ChevronRight, ChevronLeft, Filter, Sliders, X, Award, Clock, Calendar, Tag } from "lucide-react";
+import { ServiceSkeleton, ServiceSkeletonGrid } from "@/components/services/service-skeleton";
 
 // Define filter types
 type DurationFilterKeys = "under30" | "min30to60" | "min60to90" | "over90";
 type PriceRangeKeys = "min" | "max";
 type ViewMode = "list" | "map";
+type ExperienceLevelKeys = "beginner" | "intermediate" | "advanced" | "all-levels";
+type ServiceTypeKeys = "in-person" | "virtual" | "group" | "private";
+type AppliedFilter = {
+  type: string;
+  value: string;
+  displayValue?: string;
+};
+type DistanceFilterKeys = "5km" | "10km" | "25km" | "50km" | "100km";
+
+// Number of items per page for pagination
+const ITEMS_PER_PAGE = 9;
+
+// Create a reusable toggle switch component with improved functionality
+const ToggleSwitch = ({ 
+  id, 
+  label, 
+  checked, 
+  onChange 
+}: { 
+  id: string; 
+  label: React.ReactNode; 
+  checked: boolean; 
+  onChange: () => void 
+}) => {
+  // Add debug logging to help trace the issue
+  const handleClick = (e: React.MouseEvent | React.KeyboardEvent) => {
+    // Stop event propagation to prevent double firing
+    e.stopPropagation();
+    e.preventDefault();
+    console.log(`Toggle clicked: ${id}, current state: ${checked}, changing to: ${!checked}`);
+    onChange();
+  };
+
+  return (
+    <div 
+      className="flex items-center justify-between group hover:bg-white/70 p-2 rounded-md transition-colors cursor-pointer"
+      onClick={(e) => handleClick(e)}
+    >
+      <label 
+        htmlFor={id} 
+        className="text-sm cursor-pointer flex items-center flex-1 mr-2"
+      >
+        {label}
+      </label>
+      <div 
+        className="relative inline-block w-12 align-middle select-none cursor-pointer"
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick(e);
+          }
+        }}
+      >
+        <input 
+          type="checkbox"
+          id={id}
+          checked={checked}
+          onChange={() => {}}
+          className="sr-only"
+        />
+        <div 
+          className={`block h-6 w-12 rounded-full ${checked ? 'bg-primary' : 'bg-gray-300'} transition-colors duration-200`}
+        ></div>
+        <div 
+          className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200 ease-in-out ${checked ? 'translate-x-6' : 'translate-x-0'}`}
+        ></div>
+      </div>
+    </div>
+  );
+};
 
 export default function ServicesPage() {
   const searchParams = useSearchParams();
@@ -26,9 +99,90 @@ export default function ServicesPage() {
     min60to90: false,
     over90: false
   });
-  const [showPopular, setShowPopular] = useState(false);
+  const [experienceLevelFilters, setExperienceLevelFilters] = useState({
+    beginner: false,
+    intermediate: false,
+    advanced: false,
+    "all-levels": false
+  });
+  const [serviceTypeFilters, setServiceTypeFilters] = useState({
+    "in-person": false,
+    virtual: false,
+    group: false,
+    private: false
+  });
+  const [showNew, setShowNew] = useState(false);
   const [sortOption, setSortOption] = useState("recommended");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilter[]>([]);
+  const [selectedDistance, setSelectedDistance] = useState<DistanceFilterKeys | "all">("all");
+  const [availabilityFilters, setAvailabilityFilters] = useState({
+    "available-today": false,
+    "available-weekend": false,
+    "available-evening": false
+  });
+  const [amenityFilters, setAmenityFilters] = useState({
+    "parking": false,
+    "wheelchair": false,
+    "wifi": false,
+    "childcare": false
+  });
+  
+  // Log state changes for debugging
+  useEffect(() => {
+    console.log("Service type filters updated:", serviceTypeFilters);
+  }, [serviceTypeFilters]);
+  
+  useEffect(() => {
+    console.log("Duration filters updated:", durationFilters);
+  }, [durationFilters]);
+  
+  useEffect(() => {
+    console.log("Experience level filters updated:", experienceLevelFilters);
+  }, [experienceLevelFilters]);
+  
+  useEffect(() => {
+    console.log("Amenity filters updated:", amenityFilters);
+  }, [amenityFilters]);
+  
+  useEffect(() => {
+    console.log("Availability filters updated:", availabilityFilters);
+  }, [availabilityFilters]);
+  
+  // Reset scroll position when filters change
+  useEffect(() => {
+    if (showFilters) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [showFilters]);
+  
+  // Force re-render when filters change
+  const forceUpdate = useState({})[1];
+  
+  const refreshUI = useCallback(() => {
+    // Force component to re-render
+    forceUpdate({});
+  }, [forceUpdate]);
+  
+  // Ensure UI updates when filters change
+  useEffect(() => {
+    refreshUI();
+  }, [
+    serviceTypeFilters, 
+    durationFilters, 
+    experienceLevelFilters, 
+    amenityFilters, 
+    availabilityFilters,
+    showNew,
+    selectedCategory,
+    selectedLocation,
+    selectedDistance,
+    priceRange,
+    refreshUI
+  ]);
   
   // Initialize state from URL parameters
   useEffect(() => {
@@ -55,6 +209,21 @@ export default function ServicesPage() {
     if (category) {
       setSelectedCategory(category);
     }
+    
+    const page = searchParams.get("page");
+    if (page) {
+      setCurrentPage(parseInt(page, 10));
+    } else {
+      setCurrentPage(1);
+    }
+    
+    // Simulate loading time for data
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
   }, [searchParams]);
   
   // Update URL when view mode changes
@@ -69,6 +238,17 @@ export default function ServicesPage() {
     } else {
       params.delete("view");
     }
+    
+    router.push(`/services?${params.toString()}`);
+  };
+  
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    
+    // Update URL query parameters
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", page.toString());
     
     router.push(`/services?${params.toString()}`);
   };
@@ -112,9 +292,121 @@ export default function ServicesPage() {
         return false;
       }
       
-      // Popular filter
-      if (showPopular && (service.rating ?? 0) < 4.5) {
-        return false;
+      // Experience level filters - simulate with service ID to distribute services
+      const activeExperienceLevelFilters = Object.entries(experienceLevelFilters)
+        .filter(([_, isActive]) => isActive)
+        .map(([key]) => key);
+      
+      if (activeExperienceLevelFilters.length > 0) {
+        // Deterministically assign each service to an experience level based on ID
+        const serviceIdNum = parseInt(service.id.replace(/\D/g, '') || '0', 10);
+        const experienceLevels: ExperienceLevelKeys[] = ['beginner', 'intermediate', 'advanced', 'all-levels'];
+        const simulatedLevel = experienceLevels[serviceIdNum % experienceLevels.length];
+        
+        // If none of the active filters match this service's simulated level, filter it out
+        if (!activeExperienceLevelFilters.includes(simulatedLevel)) {
+          return false;
+        }
+      }
+      
+      // Service type filters - simulate with service name
+      const activeServiceTypeFilters = Object.entries(serviceTypeFilters)
+        .filter(([_, isActive]) => isActive)
+        .map(([key]) => key);
+      
+      if (activeServiceTypeFilters.length > 0) {
+        // Simulate service type based on name or description content
+        const serviceTypeMap: Record<ServiceTypeKeys, string[]> = {
+          'in-person': ['massage', 'facial', 'salon', 'spa'],
+          'virtual': ['online', 'virtual', 'digital', 'remote'],
+          'group': ['class', 'workshop', 'group', 'together'],
+          'private': ['private', 'individual', 'personal', 'one-on-one']
+        };
+        
+        // Check if any active filter keywords match the service name or description
+        const serviceMatches = activeServiceTypeFilters.some(filterType => {
+          const keywords = serviceTypeMap[filterType as ServiceTypeKeys];
+          return keywords.some(keyword => 
+            service.name?.toLowerCase().includes(keyword) || 
+            service.description?.toLowerCase().includes(keyword)
+          );
+        });
+        
+        if (!serviceMatches) {
+          return false;
+        }
+      }
+      
+      // New services filter - simulate with service ID (lower IDs are newer)
+      if (showNew) {
+        // Treat services with IDs divisible by 3 as "new"
+        const serviceIdNum = parseInt(service.id.replace(/\D/g, '') || '0', 10);
+        if (serviceIdNum % 3 !== 0) {
+          return false;
+        }
+      }
+      
+      // Distance filter - simulate using serviceId to filter some services
+      if (selectedDistance !== "all") {
+        // Simulate distance filtering by removing some services
+        const serviceIdNum = parseInt(service.id.replace(/\D/g, '') || '0', 10);
+        
+        switch(selectedDistance) {
+          case "5km":
+            if (serviceIdNum % 5 !== 0) return false;
+            break;
+          case "10km":
+            if (serviceIdNum % 4 !== 0) return false;
+            break;
+          case "25km":
+            if (serviceIdNum % 3 !== 0) return false;
+            break;
+          case "50km":
+            if (serviceIdNum % 2 !== 0) return false;
+            break;
+          // 100km includes all services
+        }
+      }
+      
+      // Amenity filters - simulate with service ID
+      const activeAmenityFilters = Object.entries(amenityFilters)
+        .filter(([_, isActive]) => isActive)
+        .map(([key]) => key);
+      
+      if (activeAmenityFilters.length > 0) {
+        // Simple simulation based on service ID
+        const serviceIdNum = parseInt(service.id.replace(/\D/g, '') || '0', 10);
+        const hasAmenities = activeAmenityFilters.every(filter => {
+          switch(filter) {
+            case "parking": return serviceIdNum % 2 === 0;
+            case "wheelchair": return serviceIdNum % 3 === 0;
+            case "wifi": return serviceIdNum % 5 === 0;
+            case "childcare": return serviceIdNum % 7 === 0;
+            default: return true;
+          }
+        });
+        
+        if (!hasAmenities) return false;
+      }
+      
+      // Availability filters - simulate with service ID
+      const activeAvailabilityFilters = Object.entries(availabilityFilters)
+        .filter(([_, isActive]) => isActive)
+        .map(([key]) => key);
+      
+      if (activeAvailabilityFilters.length > 0) {
+        // Simple simulation based on service ID
+        const serviceIdNum = parseInt(service.id.replace(/\D/g, '') || '0', 10);
+        const isAvailable = activeAvailabilityFilters.every(filter => {
+          switch(filter) {
+            case "available-today": return serviceIdNum % 2 === 0;
+            case "available-weekend": return serviceIdNum % 3 === 0;
+            case "available-evening": return serviceIdNum % 4 === 0;
+            default: return true;
+          }
+        });
+        
+        if (!isAvailable) return false;
       }
       
       return true;
@@ -133,6 +425,25 @@ export default function ServicesPage() {
         return (b.durationMinutes ?? 0) - (a.durationMinutes ?? 0);
       case "rating":
         return (b.rating ?? 0) - (a.rating ?? 0);
+      case "mostReviewed":
+        // Simulate review count using service ID for demo purposes
+        const getReviewCount = (service: typeof services[0]) => {
+          const serviceId = parseInt(service.id.replace(/\D/g, '') || '0', 10);
+          return serviceId * 3 + 5; // Simple formula to generate a review count
+        };
+        return getReviewCount(b) - getReviewCount(a);
+      case "newest":
+        // Sort by creation date, newest first
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case "trending":
+        // Simulate trending score using a combination of rating and ID
+        const getTrendingScore = (service: typeof services[0]) => {
+          const serviceId = parseInt(service.id.replace(/\D/g, '') || '0', 10);
+          const rating = service.rating ?? 3.0;
+          // Simple formula: rating * factor + recency factor
+          return rating * 10 + (serviceId % 5) * 2;
+        };
+        return getTrendingScore(b) - getTrendingScore(a);
       default:
         return 0; // recommended - no specific sorting
     }
@@ -140,10 +451,102 @@ export default function ServicesPage() {
 
   // Handle filters change
   const handleDurationChange = (filter: DurationFilterKeys) => {
-    setDurationFilters({
-      ...durationFilters,
-      [filter]: !durationFilters[filter]
-    });
+    // Directly set new state value
+    const newValue = !durationFilters[filter];
+    
+    // Create a new object to ensure state update
+    setDurationFilters(prevState => ({
+      ...prevState,
+      [filter]: newValue
+    }));
+    
+    // Update applied filters
+    if (newValue) {
+      let displayValue = "";
+      switch(filter) {
+        case "under30":
+          displayValue = "Under 30 minutes";
+          break;
+        case "min30to60":
+          displayValue = "30-60 minutes";
+          break;
+        case "min60to90":
+          displayValue = "60-90 minutes";
+          break;
+        case "over90":
+          displayValue = "Over 90 minutes";
+          break;
+      }
+      setAppliedFilters(prev => [...prev, {type: "Duration", value: filter, displayValue}]);
+    } else {
+      setAppliedFilters(prev => prev.filter(f => !(f.type === "Duration" && f.value === filter)));
+    }
+  };
+  
+  const handleExperienceLevelChange = (filter: ExperienceLevelKeys) => {
+    // Directly set new state value
+    const newValue = !experienceLevelFilters[filter];
+    
+    // Create a new object to ensure state update
+    setExperienceLevelFilters(prevState => ({
+      ...prevState,
+      [filter]: newValue
+    }));
+    
+    // Update applied filters
+    if (newValue) {
+      let displayValue = "";
+      switch(filter) {
+        case "beginner":
+          displayValue = "Beginner";
+          break;
+        case "intermediate":
+          displayValue = "Intermediate";
+          break;
+        case "advanced":
+          displayValue = "Advanced";
+          break;
+        case "all-levels":
+          displayValue = "All Levels";
+          break;
+      }
+      setAppliedFilters(prev => [...prev, {type: "Experience Level", value: filter, displayValue}]);
+    } else {
+      setAppliedFilters(prev => prev.filter(f => !(f.type === "Experience Level" && f.value === filter)));
+    }
+  };
+  
+  const handleServiceTypeChange = (filter: ServiceTypeKeys) => {
+    // Directly set new state value
+    const newValue = !serviceTypeFilters[filter];
+    
+    // Create a new object to ensure state update
+    setServiceTypeFilters(prevState => ({
+      ...prevState,
+      [filter]: newValue
+    }));
+    
+    // Update applied filters
+    if (newValue) {
+      let displayValue = "";
+      switch(filter) {
+        case "in-person":
+          displayValue = "In-Person";
+          break;
+        case "virtual":
+          displayValue = "Virtual";
+          break;
+        case "group":
+          displayValue = "Group Sessions";
+          break;
+        case "private":
+          displayValue = "Private Sessions";
+          break;
+      }
+      setAppliedFilters(prev => [...prev, {type: "Service Type", value: filter, displayValue}]);
+    } else {
+      setAppliedFilters(prev => prev.filter(f => !(f.type === "Service Type" && f.value === filter)));
+    }
   };
   
   const handlePriceChange = (type: PriceRangeKeys, value: string) => {
@@ -155,8 +558,97 @@ export default function ServicesPage() {
   
   const handleApplyFilters = () => {
     // Already applied through state changes
+    if (showFilters) {
+      setShowFilters(false);
+    }
   };
   
+  // Handle amenity filter change
+  const handleAmenityChange = (filter: string) => {
+    // Directly set new state value
+    const newValue = !amenityFilters[filter as keyof typeof amenityFilters];
+    
+    // Create a new object to ensure state update
+    setAmenityFilters(prevState => ({
+      ...prevState,
+      [filter]: newValue
+    }));
+    
+    // Update applied filters
+    if (newValue) {
+      let displayValue = "";
+      switch(filter) {
+        case "parking":
+          displayValue = "Free Parking";
+          break;
+        case "wheelchair":
+          displayValue = "Wheelchair Accessible";
+          break;
+        case "wifi":
+          displayValue = "Free Wi-Fi";
+          break;
+        case "childcare":
+          displayValue = "Childcare Available";
+          break;
+      }
+      setAppliedFilters(prev => [...prev, {type: "Amenity", value: filter, displayValue}]);
+    } else {
+      setAppliedFilters(prev => prev.filter(f => !(f.type === "Amenity" && f.value === filter)));
+    }
+  };
+  
+  // Handle availability filter change
+  const handleAvailabilityChange = (filter: string) => {
+    // Directly set new state value
+    const newValue = !availabilityFilters[filter as keyof typeof availabilityFilters];
+    
+    // Create a new object to ensure state update
+    setAvailabilityFilters(prevState => ({
+      ...prevState,
+      [filter]: newValue
+    }));
+    
+    // Update applied filters
+    if (newValue) {
+      let displayValue = "";
+      switch(filter) {
+        case "available-today":
+          displayValue = "Available Today";
+          break;
+        case "available-weekend":
+          displayValue = "Available This Weekend";
+          break;
+        case "available-evening":
+          displayValue = "Evening Appointments";
+          break;
+      }
+      setAppliedFilters(prev => [...prev, {type: "Availability", value: filter, displayValue}]);
+    } else {
+      setAppliedFilters(prev => prev.filter(f => !(f.type === "Availability" && f.value === filter)));
+    }
+  };
+  
+  // Handle distance filter change
+  const handleDistanceChange = (distance: DistanceFilterKeys | "all") => {
+    setSelectedDistance(distance);
+    
+    // Update applied filters
+    if (distance !== "all") {
+      const distanceValue = distance;
+      const displayValue = `Within ${distance}`;
+      
+      // Remove any existing distance filters
+      const filteredFilters = appliedFilters.filter(f => f.type !== "Distance");
+      
+      // Add the new distance filter
+      setAppliedFilters([...filteredFilters, {type: "Distance", value: distanceValue, displayValue}]);
+    } else {
+      // Remove distance filter if "all" is selected
+      setAppliedFilters(appliedFilters.filter(f => f.type !== "Distance"));
+    }
+  };
+  
+  // Clear all filters and reset pagination
   const clearAllFilters = () => {
     setSearchQuery("");
     setSelectedCategory("all");
@@ -168,21 +660,62 @@ export default function ServicesPage() {
       min60to90: false,
       over90: false
     });
-    setShowPopular(false);
+    setExperienceLevelFilters({
+      beginner: false,
+      intermediate: false,
+      advanced: false,
+      "all-levels": false
+    });
+    setServiceTypeFilters({
+      "in-person": false,
+      virtual: false,
+      group: false,
+      private: false
+    });
+    setShowNew(false);
     setSortOption("recommended");
+    setCurrentPage(1);
+    setAppliedFilters([]);
+    setSelectedDistance("all");
+    setAvailabilityFilters({
+      "available-today": false,
+      "available-weekend": false,
+      "available-evening": false
+    });
+    setAmenityFilters({
+      "parking": false,
+      "wheelchair": false,
+      "wifi": false,
+      "childcare": false
+    });
+    
+    // Update URL to remove all filter parameters
+    router.push('/services');
+  };
+  
+  // Calculate pagination details
+  const totalItems = filteredServices.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+  const paginatedServices = sortedServices.slice(startIndex, endIndex);
+  
+  // Toggle filter sidebar on mobile
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
   };
 
   return (
-    <div className="container py-10">
+    <div className="container max-w-7xl mx-auto py-12 px-4 sm:px-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Services</h1>
-        <p className="text-muted-foreground">
-          Browse our beauty and wellness services
+        <h1 className="text-3xl font-bold">Find Your Perfect Service</h1>
+        <p className="text-muted-foreground mt-2">
+          Browse our curated collection of beauty and wellness services
         </p>
       </div>
       
-      {/* Search and sort bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
+      {/* Top Search and Sort Bar */}
+      <div className="card-floating-header flex flex-col md:flex-row gap-4 items-center mb-6">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <input
@@ -190,233 +723,537 @@ export default function ServicesPage() {
             placeholder="Search services..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full pl-10 pr-4 py-3 border rounded-lg bg-white/50 focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         
+        {/* Mobile filter toggle */}
+        <button 
+          onClick={toggleFilters}
+          className="md:hidden flex items-center gap-2 bg-white/70 px-4 py-2 rounded-lg border border-gray-200 shadow-sm"
+        >
+          <Filter className="h-4 w-4" />
+          <span>Filters</span>
+        </button>
+        
         <div className="flex items-center ml-auto gap-2">
           {/* View toggle */}
-          <div className="mr-4 flex items-center gap-2 border rounded-md p-1">
+          <div className="hidden md:flex items-center gap-2 border rounded-lg p-1 shadow-sm bg-white/70">
             <button
               onClick={() => handleViewModeChange("list")}
-              className={`p-1.5 rounded-md ${viewMode === "list" ? "bg-primary text-white" : "text-gray-500"}`}
+              className={`p-2 rounded-md transition-colors ${viewMode === "list" ? "bg-primary text-white" : "text-gray-500 hover:bg-gray-100"}`}
               aria-label="List view"
             >
               <Grid className="h-4 w-4" />
             </button>
             <button
               onClick={() => handleViewModeChange("map")}
-              className={`p-1.5 rounded-md ${viewMode === "map" ? "bg-primary text-white" : "text-gray-500"}`}
+              className={`p-2 rounded-md transition-colors ${viewMode === ("map" as ViewMode) ? "bg-primary text-white" : "text-gray-500 hover:bg-gray-100"}`}
               aria-label="Map view"
             >
               <Map className="h-4 w-4" />
             </button>
           </div>
           
-          <label htmlFor="sort" className="text-sm whitespace-nowrap">Sort by:</label>
-          <select
-            id="sort"
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-          >
-            <option value="recommended">Recommended</option>
-            <option value="priceAsc">Price: Low to High</option>
-            <option value="priceDesc">Price: High to Low</option>
-            <option value="durationAsc">Duration: Shortest</option>
-            <option value="durationDesc">Duration: Longest</option>
-            <option value="rating">Highest Rated</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <label htmlFor="sort" className="text-sm whitespace-nowrap hidden md:inline">Sort by:</label>
+            <select
+              id="sort"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white/70 shadow-sm"
+            >
+              <option value="recommended">Recommended</option>
+              <option value="priceAsc">Price: Low to High</option>
+              <option value="priceDesc">Price: High to Low</option>
+              <option value="durationAsc">Duration: Shortest</option>
+              <option value="durationDesc">Duration: Longest</option>
+              <option value="rating">Highest Rated</option>
+              <option value="mostReviewed">Most Reviewed</option>
+              <option value="newest">Newest</option>
+              <option value="trending">Trending</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-1">
-          <div className="rounded-lg border bg-card p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Filters</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Filter sidebar - desktop always visible, mobile conditional */}
+        <div className={`${showFilters ? 'fixed inset-0 z-50 bg-black/30 backdrop-blur-sm' : 'hidden'} lg:relative lg:block lg:z-auto lg:bg-transparent transition-all duration-300`}>
+          <div className={`${showFilters ? 'absolute right-0 h-full w-3/4 max-w-xs' : ''} lg:relative lg:w-full lg:max-w-none transition-transform duration-300 ease-in-out`}>
+            <div className="card-modern p-6 h-full lg:h-auto overflow-y-auto max-h-[calc(100vh-2rem)] lg:sticky lg:top-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold flex items-center">
+                  <Sliders className="h-5 w-5 mr-2 text-primary" />
+                  Filters
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={clearAllFilters}
+                    className="text-sm text-primary hover:underline font-medium"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={toggleFilters}
+                    className="lg:hidden text-gray-500 bg-white/70 rounded-full h-6 w-6 flex items-center justify-center shadow-sm"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Applied filters section */}
+              {appliedFilters.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium mb-3 flex items-center text-foreground">
+                    Applied Filters ({appliedFilters.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {appliedFilters.map((filter, index) => (
+                      <div 
+                        key={index} 
+                        className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full flex items-center"
+                      >
+                        {filter.displayValue || filter.value.replace(/-/g, ' ')}
+                        <button 
+                          className="ml-1 text-primary hover:text-primary/70"
+                          onClick={() => {
+                            if (filter.type === "Duration") {
+                              handleDurationChange(filter.value as DurationFilterKeys);
+                            } else if (filter.type === "Experience Level") {
+                              handleExperienceLevelChange(filter.value as ExperienceLevelKeys);
+                            } else if (filter.type === "Service Type") {
+                              handleServiceTypeChange(filter.value as ServiceTypeKeys);
+                            } else if (filter.type === "New") {
+                              setShowNew(false);
+                              setAppliedFilters(appliedFilters.filter(f => f.type !== "New"));
+                            } else if (filter.type === "Amenity") {
+                              handleAmenityChange(filter.value as string);
+                            } else if (filter.type === "Availability") {
+                              handleAvailabilityChange(filter.value as string);
+                            } else if (filter.type === "Distance") {
+                              handleDistanceChange(filter.value as DistanceFilterKeys | "all");
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button 
+                      onClick={clearAllFilters}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Promoted filters - best seller categories */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium mb-3 flex items-center text-foreground">
+                  <Tag className="h-4 w-4 mr-1 text-primary" /> Popular Categories
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.slice(0, 4).map(category => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`p-2 text-xs rounded-lg text-center ${
+                        selectedCategory === category.id 
+                          ? 'bg-primary text-white' 
+                          : 'bg-white/50 hover:bg-white/80 text-gray-700'
+                      }`}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Distance filter */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium mb-3 flex items-center text-foreground">
+                  <MapPin className="h-4 w-4 mr-1 text-primary" /> Distance
+                </h3>
+                <select
+                  value={selectedDistance}
+                  onChange={(e) => handleDistanceChange(e.target.value as DistanceFilterKeys | "all")}
+                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white/50"
+                >
+                  <option value="all">Any Distance</option>
+                  <option value="5km">Within 5 km</option>
+                  <option value="10km">Within 10 km</option>
+                  <option value="25km">Within 25 km</option>
+                  <option value="50km">Within 50 km</option>
+                  <option value="100km">Within 100 km</option>
+                </select>
+              </div>
+              
+              {/* Location filter */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium mb-3 flex items-center text-foreground">
+                  <MapPin className="h-4 w-4 mr-1 text-primary" /> Location
+                </h3>
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white/50"
+                >
+                  <option value="all">All Locations</option>
+                  {locations?.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}, {location.state ? `${location.state}, ` : ""}{location.country}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Categories */}
+              <div className="border-t my-4 border-white/20"></div>
+              
+              <div className="mb-6">
+                <h3 className="text-sm font-medium mb-3 text-foreground">Categories</h3>
+                <div className="space-y-2">
+                  <div className="bg-white/50 rounded-lg p-1">
+                    <div className="flex items-center p-2 cursor-pointer" onClick={() => setSelectedCategory("all")}>
+                      <input
+                        type="radio"
+                        id="category-all"
+                        name="category"
+                        checked={selectedCategory === "all"}
+                        onChange={() => setSelectedCategory("all")}
+                        className="sr-only"
+                      />
+                      <div className={`h-4 w-4 rounded-full border ${selectedCategory === "all" ? 'bg-primary border-primary' : 'border-gray-300'} mr-2`}></div>
+                      <label htmlFor="category-all" className="text-sm cursor-pointer">
+                        All Categories
+                      </label>
+                    </div>
+                  
+                    {categories?.map((category) => (
+                      <div 
+                        key={category.id} 
+                        className="flex items-center p-2 cursor-pointer" 
+                        onClick={() => setSelectedCategory(category.id)}
+                      >
+                        <input
+                          type="radio"
+                          id={`category-${category.id}`}
+                          name="category"
+                          checked={selectedCategory === category.id}
+                          onChange={() => setSelectedCategory(category.id)}
+                          className="sr-only"
+                        />
+                        <div className={`h-4 w-4 rounded-full border ${selectedCategory === category.id ? 'bg-primary border-primary' : 'border-gray-300'} mr-2`}></div>
+                        <label htmlFor={`category-${category.id}`} className="text-sm cursor-pointer">
+                          {category.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Quick filters section */}
+              <div className="space-y-2 mb-6">
+                {/* New services filter with fixed toggle */}
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <ToggleSwitch
+                    id="new-services"
+                    label={<>
+                      <Calendar className="h-4 w-4 mr-1 text-green-500" /> 
+                      <span>New Services (Last 30 days)</span>
+                    </>}
+                    checked={showNew}
+                    onChange={() => {
+                      const newValue = !showNew;
+                      setShowNew(newValue);
+                      if (newValue) {
+                        setAppliedFilters([...appliedFilters, {
+                          type: "New", 
+                          value: "new", 
+                          displayValue: "New Services"
+                        }]);
+                      } else {
+                        setAppliedFilters(appliedFilters.filter(f => f.type !== "New"));
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div className="border-t my-4 border-white/20"></div>
+              
+              {/* Service Type filters */}
+              <h3 className="text-sm font-medium mb-3 text-foreground">Service Type</h3>
+              <div className="space-y-2 mb-6 bg-white/50 rounded-lg p-3">
+                <ToggleSwitch
+                  id="in-person"
+                  label="In-Person"
+                  checked={serviceTypeFilters["in-person"]}
+                  onChange={() => handleServiceTypeChange("in-person")}
+                />
+                
+                <ToggleSwitch
+                  id="virtual"
+                  label="Virtual"
+                  checked={serviceTypeFilters.virtual}
+                  onChange={() => handleServiceTypeChange("virtual")}
+                />
+                
+                <ToggleSwitch
+                  id="group"
+                  label="Group Sessions"
+                  checked={serviceTypeFilters.group}
+                  onChange={() => handleServiceTypeChange("group")}
+                />
+                
+                <ToggleSwitch
+                  id="private"
+                  label="Private Sessions"
+                  checked={serviceTypeFilters.private}
+                  onChange={() => handleServiceTypeChange("private")}
+                />
+              </div>
+              
+              <div className="border-t my-4 border-white/20"></div>
+              
+              {/* Availability filters */}
+              <h3 className="text-sm font-medium mb-3 text-foreground">Availability</h3>
+              <div className="space-y-2 mb-6 bg-white/50 rounded-lg p-3">
+                <ToggleSwitch
+                  id="available-today"
+                  label="Available Today"
+                  checked={availabilityFilters["available-today"]}
+                  onChange={() => handleAvailabilityChange("available-today")}
+                />
+                
+                <ToggleSwitch
+                  id="available-weekend"
+                  label="Available This Weekend"
+                  checked={availabilityFilters["available-weekend"]}
+                  onChange={() => handleAvailabilityChange("available-weekend")}
+                />
+                
+                <ToggleSwitch
+                  id="available-evening"
+                  label="Evening Appointments"
+                  checked={availabilityFilters["available-evening"]}
+                  onChange={() => handleAvailabilityChange("available-evening")}
+                />
+              </div>
+              
+              <div className="border-t my-4 border-white/20"></div>
+              
+              {/* Experience Level filters */}
+              <h3 className="text-sm font-medium mb-3 flex items-center text-foreground">
+                <Award className="h-4 w-4 mr-1 text-primary" /> Experience Level
+              </h3>
+              <div className="space-y-2 mb-6 bg-white/50 rounded-lg p-3">
+                <ToggleSwitch
+                  id="beginner"
+                  label="Beginner"
+                  checked={experienceLevelFilters.beginner}
+                  onChange={() => handleExperienceLevelChange("beginner")}
+                />
+                
+                <ToggleSwitch
+                  id="intermediate"
+                  label="Intermediate"
+                  checked={experienceLevelFilters.intermediate}
+                  onChange={() => handleExperienceLevelChange("intermediate")}
+                />
+                
+                <ToggleSwitch
+                  id="advanced"
+                  label="Advanced"
+                  checked={experienceLevelFilters.advanced}
+                  onChange={() => handleExperienceLevelChange("advanced")}
+                />
+                
+                <ToggleSwitch
+                  id="all-levels"
+                  label="All Levels Welcome"
+                  checked={experienceLevelFilters["all-levels"]}
+                  onChange={() => handleExperienceLevelChange("all-levels")}
+                />
+              </div>
+              
+              <div className="border-t my-4 border-white/20"></div>
+              
+              {/* Amenities filters */}
+              <h3 className="text-sm font-medium mb-3 text-foreground">Amenities</h3>
+              <div className="space-y-2 mb-6 bg-white/50 rounded-lg p-3">
+                <ToggleSwitch
+                  id="parking"
+                  label="Free Parking"
+                  checked={amenityFilters.parking}
+                  onChange={() => handleAmenityChange("parking")}
+                />
+                
+                <ToggleSwitch
+                  id="wheelchair"
+                  label="Wheelchair Accessible"
+                  checked={amenityFilters.wheelchair}
+                  onChange={() => handleAmenityChange("wheelchair")}
+                />
+                
+                <ToggleSwitch
+                  id="wifi"
+                  label="Free Wi-Fi"
+                  checked={amenityFilters.wifi}
+                  onChange={() => handleAmenityChange("wifi")}
+                />
+                
+                <ToggleSwitch
+                  id="childcare"
+                  label="Childcare Available"
+                  checked={amenityFilters.childcare}
+                  onChange={() => handleAmenityChange("childcare")}
+                />
+              </div>
+              
+              <div className="border-t my-4 border-white/20"></div>
+              
+              <h3 className="text-sm font-medium mb-3 text-foreground">Price Range</h3>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="text-xs text-muted-foreground">Min</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={priceRange.min}
+                    onChange={(e) => handlePriceChange("min", e.target.value)}
+                    className="mt-1 w-full rounded-lg border p-2 text-sm focus:border-primary focus:ring-primary bg-white/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Max</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="1000"
+                    value={priceRange.max}
+                    onChange={(e) => handlePriceChange("max", e.target.value)}
+                    className="mt-1 w-full rounded-lg border p-2 text-sm focus:border-primary focus:ring-primary bg-white/50"
+                  />
+                </div>
+              </div>
+              
+              <div className="border-t my-4 border-white/20"></div>
+              
+              <h3 className="text-sm font-medium mb-3 flex items-center text-foreground">
+                <Clock className="h-4 w-4 mr-1 text-primary" /> Duration
+              </h3>
+              <div className="space-y-2 mb-6 bg-white/50 rounded-lg p-3">
+                <ToggleSwitch
+                  id="duration-30"
+                  label="Under 30 minutes"
+                  checked={durationFilters.under30}
+                  onChange={() => handleDurationChange("under30")}
+                />
+                
+                <ToggleSwitch
+                  id="duration-60"
+                  label="30 - 60 minutes"
+                  checked={durationFilters.min30to60}
+                  onChange={() => handleDurationChange("min30to60")}
+                />
+                
+                <ToggleSwitch
+                  id="duration-90"
+                  label="60 - 90 minutes"
+                  checked={durationFilters.min60to90}
+                  onChange={() => handleDurationChange("min60to90")}
+                />
+                
+                <ToggleSwitch
+                  id="duration-120"
+                  label="Over 90 minutes"
+                  checked={durationFilters.over90}
+                  onChange={() => handleDurationChange("over90")}
+                />
+              </div>
+              
+              <button
+                onClick={handleApplyFilters}
+                className="card-modern-button w-full flex items-center justify-center gap-2"
+              >
+                <span>Apply Filters</span>
+                {!isLoading && <span className="text-sm opacity-90">({totalItems} results)</span>}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="lg:col-span-3">
+          {/* Applied filters - horizontal display above product list */}
+          {appliedFilters.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6 items-center bg-white/50 p-3 rounded-lg">
+              <span className="text-xs font-medium text-gray-500">Active filters:</span>
+              {appliedFilters.map((filter, index) => (
+                <div 
+                  key={index} 
+                  className="bg-primary/10 text-primary text-xs px-3 py-1.5 rounded-full flex items-center"
+                >
+                  {filter.displayValue || filter.value.replace(/-/g, ' ')}
+                  <button 
+                    className="ml-1.5 text-primary hover:text-primary/70"
+                    onClick={() => {
+                      if (filter.type === "Duration") {
+                        handleDurationChange(filter.value as DurationFilterKeys);
+                      } else if (filter.type === "Experience Level") {
+                        handleExperienceLevelChange(filter.value as ExperienceLevelKeys);
+                      } else if (filter.type === "Service Type") {
+                        handleServiceTypeChange(filter.value as ServiceTypeKeys);
+                      } else if (filter.type === "New") {
+                        setShowNew(false);
+                        setAppliedFilters(appliedFilters.filter(f => f.type !== "New"));
+                      } else if (filter.type === "Amenity") {
+                        handleAmenityChange(filter.value as string);
+                      } else if (filter.type === "Availability") {
+                        handleAvailabilityChange(filter.value as string);
+                      } else if (filter.type === "Distance") {
+                        handleDistanceChange(filter.value as DistanceFilterKeys | "all");
+                      }
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
               <button 
                 onClick={clearAllFilters}
-                className="text-sm text-primary hover:underline"
+                className="text-xs text-primary hover:underline underline-offset-2"
               >
                 Clear all
               </button>
             </div>
-            
-            {/* Location filter */}
-            <div className="mb-4">
-              <h3 className="text-md font-medium mb-2 flex items-center">
-                <MapPin className="h-4 w-4 mr-1" /> Location
-              </h3>
-              <select
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-              >
-                <option value="all">All Locations</option>
-                {locations?.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}, {location.state ? `${location.state}, ` : ""}{location.country}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Popular filter */}
-            <div className="mb-4 flex items-center">
-              <input
-                type="checkbox"
-                id="popular"
-                checked={showPopular}
-                onChange={() => setShowPopular(!showPopular)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="popular" className="ml-2 text-sm flex items-center">
-                <Star className="h-4 w-4 mr-1 text-yellow-500" /> Popular (4.5+ rating)
-              </label>
-            </div>
-            
-            <div className="border-t my-4"></div>
-            
-            {/* Categories */}
-            <h3 className="text-md font-medium mb-2">Categories</h3>
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="all"
-                  name="category"
-                  checked={selectedCategory === "all"}
-                  onChange={() => setSelectedCategory("all")}
-                  className="h-4 w-4 rounded-full border-gray-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="all" className="ml-2 text-sm">
-                  All Categories
-                </label>
-              </div>
-
-              {categories?.map((category) => (
-                <div key={category.id} className="flex items-center">
-                  <input
-                    type="radio"
-                    id={category.id}
-                    name="category"
-                    checked={selectedCategory === category.id}
-                    onChange={() => setSelectedCategory(category.id)}
-                    className="h-4 w-4 rounded-full border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor={category.id} className="ml-2 text-sm">
-                    {category.name}
-                  </label>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t my-4"></div>
-
-            <h3 className="text-md font-medium mb-2">Price Range</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-muted-foreground">Min</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={priceRange.min}
-                  onChange={(e) => handlePriceChange("min", e.target.value)}
-                  className="mt-1 w-full rounded-md border p-2 text-sm focus:border-primary focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground">Max</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="1000"
-                  value={priceRange.max}
-                  onChange={(e) => handlePriceChange("max", e.target.value)}
-                  className="mt-1 w-full rounded-md border p-2 text-sm focus:border-primary focus:ring-primary"
-                />
-              </div>
-            </div>
-
-            <div className="border-t my-4"></div>
-
-            <h3 className="text-md font-medium mb-2">Duration</h3>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="duration-30"
-                  checked={durationFilters.under30}
-                  onChange={() => handleDurationChange("under30")}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="duration-30" className="ml-2 text-sm">
-                  Under 30 minutes
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="duration-60"
-                  checked={durationFilters.min30to60}
-                  onChange={() => handleDurationChange("min30to60")}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="duration-60" className="ml-2 text-sm">
-                  30 - 60 minutes
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="duration-90"
-                  checked={durationFilters.min60to90}
-                  onChange={() => handleDurationChange("min60to90")}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="duration-90" className="ml-2 text-sm">
-                  60 - 90 minutes
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="duration-120"
-                  checked={durationFilters.over90}
-                  onChange={() => handleDurationChange("over90")}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="duration-120" className="ml-2 text-sm">
-                  Over 90 minutes
-                </label>
-              </div>
-            </div>
-
-            <button
-              onClick={handleApplyFilters}
-              className="mt-6 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
-            >
-              Apply Filters
-            </button>
-          </div>
-        </div>
-
-        <div className="lg:col-span-3">
-          {viewMode === "list" ? (
+          )}
+          
+          {/* Services Grid with improved styling */}
+          {isLoading ? (
+            <ServiceSkeletonGrid />
+          ) : (
             <>
+              <p className="text-sm text-muted-foreground mb-4">
+                Showing {startIndex + 1}-{endIndex} of {totalItems} services
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedServices.length > 0 ? (
-                  sortedServices.map(service => (
+                {paginatedServices.length > 0 ? (
+                  paginatedServices.map(service => (
                     <ServiceCard key={service.id} service={service} />
                   ))
                 ) : (
-                  <div className="col-span-full py-12 text-center">
-                    <p className="text-muted-foreground">No services found matching your criteria.</p>
+                  <div className="col-span-full py-16 text-center card-modern">
+                    <p className="text-muted-foreground mb-3">No services found matching your criteria.</p>
                     <button
                       onClick={clearAllFilters}
-                      className="mt-4 text-primary hover:underline"
+                      className="text-primary hover:underline font-medium"
                     >
                       Clear all filters
                     </button>
@@ -424,25 +1261,42 @@ export default function ServicesPage() {
                 )}
               </div>
             </>
-          ) : (
-            <div className="rounded-lg border bg-card p-4 shadow-sm">
-              <ServiceMap 
-                services={sortedServices} 
-                height="600px"
-                zoom={2}
-                centerLocation={selectedLocation !== "all" ? selectedLocation : undefined}
-              />
-              {sortedServices.length === 0 && (
-                <div className="py-4 text-center">
-                  <p className="text-muted-foreground">No services found matching your criteria.</p>
-                  <button
-                    onClick={clearAllFilters}
-                    className="mt-2 text-primary hover:underline"
-                  >
-                    Clear all filters
-                  </button>
+          )}
+          
+          {/* Pagination - only show when not loading */}
+          {!isLoading && totalPages > 1 && (
+            <div className="mt-8 flex justify-center">
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-lg border card-modern-button-secondary ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`h-10 w-10 rounded-lg ${currentPage === page 
+                        ? 'bg-primary text-white shadow-md' 
+                        : 'border bg-white/50 backdrop-blur-sm hover:bg-accent transition-colors'}`}
+                    >
+                      {page}
+                    </button>
+                  ))}
                 </div>
-              )}
+                
+                <button
+                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-lg border card-modern-button-secondary ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           )}
         </div>
