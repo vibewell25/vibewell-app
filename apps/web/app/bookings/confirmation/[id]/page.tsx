@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -12,21 +14,19 @@ import { services, providers } from "@/lib/mock-data";
 import { formatPrice } from "@/lib/utils";
 
 // Use consistent ParamsType across booking pages
-type ParamsType = Promise<{ id: string }>;
+type ParamsType = { id: string };
 
 interface BookingConfirmationPageProps {
   params: ParamsType;
 }
 
-export async function generateMetadata({ params }: BookingConfirmationPageProps): Promise<Metadata> {
-  const { id } = await params;
+export const generateMetadata = ({ params }: BookingConfirmationPageProps): Metadata => {
+  const { id } = params;
   return {
     title: "Booking Confirmation | VibeWell",
     description: "Your booking has been confirmed.",
   };
-}
-
-"use client";
+};
 
 export default function BookingConfirmationPage({ params }: BookingConfirmationPageProps) {
   const { id } = params;

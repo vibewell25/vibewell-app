@@ -86,4 +86,7 @@ export function LessonList({ lessons, courseId, currentLessonId, userProgress }:
             </div>
           );
         })}
- 
+      </div>
+    </div>
+  );
+} 
