@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "github": {
+    "enabled": true,
+    "silent": true
+  },
+  "builds": [
+    {
+      "src": "apps/web/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "rootDirectory": "apps/web"
+      }
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/apps/web/$1"
+    }
+  ]
+} 

@@ -1,16 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "pnpm vercel-build",
-  "installCommand": "pnpm install",
   "framework": "nextjs",
-  "outputDirectory": "apps/web/.next",
-  "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
-  },
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/apps/web/$1" }
-  ]
+  "buildCommand": null,
+  "installCommand": null,
+  "outputDirectory": ".next",
+  "rootDirectory": "apps/web",
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 } 
