@@ -1,227 +1,163 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, startOfWeek, endOfWeek, subWeeks, eachDayOfInterval } from "date-fns";
-
-// Chart components would be imported here in a real implementation
-// import { LineChart, BarChart } from "../ui/charts";
-
-interface AnalyticsData {
-  bookings: {
-    total: number;
-    completed: number;
-    cancelled: number;
-    dailyCounts: { date: string; count: number }[];
-  };
-  courses: {
-    enrollments: number;
-    completionRate: number;
-    averageProgress: number;
-    popularCourses: { id: string; title: string; enrollments: number }[];
-  };
-  ecommerce: {
-    revenue: number;
-    orders: number;
-    averageOrderValue: number;
-    topProducts: { id: string; name: string; sales: number }[];
-  };
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 export function AnalyticsDashboard() {
-  const [period, setPeriod] = useState<"week" | "month" | "year">("week");
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      setIsLoading(true);
-      try {
-        // In a real implementation, this would be an API call
-        // const response = await fetch(`/api/analytics?period=${period}`);
-        // const data = await response.json();
-        
-        // For demo purposes, we'll generate mock data
-        const currentDate = new Date();
-        const startDate = startOfWeek(currentDate);
-        const endDate = endOfWeek(currentDate);
-        const previousWeek = subWeeks(startDate, 1);
-        
-        const dailyData = eachDayOfInterval({ start: startDate, end: endDate }).map(date => ({
-          date: format(date, "yyyy-MM-dd"),
-          count: Math.floor(Math.random() * 10) + 1
-        }));
-        
-        const mockData: AnalyticsData = {
-          bookings: {
-            total: 42,
-            completed: 35,
-            cancelled: 7,
-            dailyCounts: dailyData
-          },
-          courses: {
-            enrollments: 156,
-            completionRate: 68,
-            averageProgress: 72,
-            popularCourses: [
-              { id: "c1", title: "Yoga Fundamentals", enrollments: 48 },
-              { id: "c2", title: "Meditation Masterclass", enrollments: 42 },
-              { id: "c3", title: "Nutrition Basics", enrollments: 36 },
-              { id: "c4", title: "Advanced Fitness", enrollments: 30 }
-            ]
-          },
-          ecommerce: {
-            revenue: 7865.50,
-            orders: 124,
-            averageOrderValue: 63.43,
-            topProducts: [
-              { id: "p1", name: "Yoga Mat Premium", sales: 28 },
-              { id: "p2", name: "Meditation Cushion", sales: 24 },
-              { id: "p3", name: "Fitness Tracker", sales: 20 },
-              { id: "p4", name: "Protein Supplement", sales: 18 }
-            ]
-          }
-        };
-        
-        setAnalyticsData(mockData);
-      } catch (error) {
-        console.error("Error fetching analytics data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnalyticsData();
-  }, [period]);
-
+    // Simulate loading time
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
   if (isLoading) {
     return (
-      <div className="w-full p-8 flex justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="animate-pulse">
+              <div className="h-5 bg-gray-200 rounded w-1/3 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </CardHeader>
+            <CardContent className="animate-pulse">
+              <div className="h-20 bg-gray-200 rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
-
-  if (!analyticsData) {
-    return (
-      <div className="w-full p-8 text-center">
-        <p className="text-muted-foreground">Failed to load analytics data.</p>
-      </div>
-    );
-  }
-
+  
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Platform Analytics</h2>
-        <div className="flex space-x-2">
-          <button 
-            onClick={() => setPeriod("week")}
-            className={`px-4 py-2 rounded-md text-sm ${period === "week" ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
-          >
-            Week
-          </button>
-          <button 
-            onClick={() => setPeriod("month")}
-            className={`px-4 py-2 rounded-md text-sm ${period === "month" ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
-          >
-            Month
-          </button>
-          <button 
-            onClick={() => setPeriod("year")}
-            className={`px-4 py-2 rounded-md text-sm ${period === "year" ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
-          >
-            Year
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-card rounded-lg shadow-sm p-6 border">
-          <h3 className="text-xl font-semibold mb-4">Booking Metrics</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Bookings</CardTitle>
+          <CardDescription>Past 30 days booking distribution</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{analyticsData.bookings.total}</p>
-              </div>
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{analyticsData.bookings.completed}</p>
-              </div>
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Cancelled</p>
-                <p className="text-2xl font-bold text-red-600">{analyticsData.bookings.cancelled}</p>
-              </div>
-            </div>
-            <div className="h-64 w-full bg-muted/50 rounded-md flex items-center justify-center">
-              <p className="text-muted-foreground">Booking Trend Chart</p>
-              {/* <LineChart data={analyticsData.bookings.dailyCounts} /> */}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-card rounded-lg shadow-sm p-6 border">
-          <h3 className="text-xl font-semibold mb-4">Course Metrics</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Enrollments</p>
-                <p className="text-2xl font-bold">{analyticsData.courses.enrollments}</p>
-              </div>
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Completion</p>
-                <p className="text-2xl font-bold">{analyticsData.courses.completionRate}%</p>
-              </div>
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Avg Progress</p>
-                <p className="text-2xl font-bold">{analyticsData.courses.averageProgress}%</p>
-              </div>
-            </div>
             <div>
-              <h4 className="font-medium mb-2">Popular Courses</h4>
-              <div className="space-y-2">
-                {analyticsData.courses.popularCourses.map(course => (
-                  <div key={course.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <span className="text-sm truncate flex-1">{course.title}</span>
-                    <span className="text-sm font-medium">{course.enrollments}</span>
-                  </div>
-                ))}
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-sm">Massage</div>
+                <div className="text-sm text-muted-foreground">45%</div>
               </div>
+              <Progress value={45} className="h-2" />
             </div>
-          </div>
-        </div>
-
-        <div className="bg-card rounded-lg shadow-sm p-6 border">
-          <h3 className="text-xl font-semibold mb-4">E-commerce Metrics</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Revenue</p>
-                <p className="text-2xl font-bold">${analyticsData.ecommerce.revenue.toFixed(2)}</p>
-              </div>
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Orders</p>
-                <p className="text-2xl font-bold">{analyticsData.ecommerce.orders}</p>
-              </div>
-              <div className="bg-muted p-4 rounded-md text-center">
-                <p className="text-sm text-muted-foreground">Avg Order</p>
-                <p className="text-2xl font-bold">${analyticsData.ecommerce.averageOrderValue.toFixed(2)}</p>
-              </div>
-            </div>
+            
             <div>
-              <h4 className="font-medium mb-2">Top Products</h4>
-              <div className="space-y-2">
-                {analyticsData.ecommerce.topProducts.map(product => (
-                  <div key={product.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <span className="text-sm truncate flex-1">{product.name}</span>
-                    <span className="text-sm font-medium">{product.sales} sold</span>
-                  </div>
-                ))}
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-sm">Haircut & Styling</div>
+                <div className="text-sm text-muted-foreground">30%</div>
               </div>
+              <Progress value={30} className="h-2" />
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-sm">Facial Treatments</div>
+                <div className="text-sm text-muted-foreground">15%</div>
+              </div>
+              <Progress value={15} className="h-2" />
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-sm">Nail Services</div>
+                <div className="text-sm text-muted-foreground">10%</div>
+              </div>
+              <Progress value={10} className="h-2" />
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Booking Trend</CardTitle>
+          <CardDescription>Weekly booking count</CardDescription>
+        </CardHeader>
+        <CardContent className="h-[220px] flex items-end justify-between gap-2">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, i) => {
+            const height = [30, 45, 60, 90, 75, 85, 50][i];
+            return (
+              <div key={day} className="flex flex-col items-center flex-1">
+                <div 
+                  className="bg-primary/80 w-full rounded-t-sm" 
+                  style={{ height: `${height}%` }}
+                ></div>
+                <div className="text-xs text-muted-foreground mt-2">{day}</div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Reviews Summary</CardTitle>
+          <CardDescription>Average ratings by service</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[
+              { name: "Massage", rating: 4.8 },
+              { name: "Haircut & Styling", rating: 4.5 },
+              { name: "Facial Treatments", rating: 4.9 },
+              { name: "Nail Services", rating: 4.6 }
+            ].map((service) => (
+              <div key={service.name}>
+                <div className="flex justify-between items-center">
+                  <div className="text-sm">{service.name}</div>
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium">{service.rating}</span>
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      viewBox="0 0 24 24" 
+                      fill="currentColor" 
+                      className="w-4 h-4 text-yellow-500 ml-1"
+                    >
+                      <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                <Progress value={service.rating * 20} className="h-1 mt-1" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Popular Times</CardTitle>
+          <CardDescription>Most booked appointment times</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[
+              { time: "Morning (8am-12pm)", percentage: 35 },
+              { time: "Afternoon (12pm-4pm)", percentage: 25 },
+              { time: "Evening (4pm-8pm)", percentage: 40 },
+              { time: "Late Night (8pm+)", percentage: 5 }
+            ].map((timeSlot) => (
+              <div key={timeSlot.time}>
+                <div className="flex justify-between items-center mb-1">
+                  <div className="text-sm">{timeSlot.time}</div>
+                  <div className="text-sm text-muted-foreground">{timeSlot.percentage}%</div>
+                </div>
+                <Progress value={timeSlot.percentage} className="h-2" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 } 
