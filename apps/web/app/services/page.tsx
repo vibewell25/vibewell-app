@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ServiceCard } from "@/components/services/service-card";
 import { ServiceMap } from "@/components/services/service-map";
-import { services, categories, locations } from "@/lib/mock-data";
+import { services, categories, locations, providers } from "@/lib/mock-data";
 import { Search, MapPin, ArrowUpDown, Star, Grid, Map, ChevronRight, ChevronLeft, Filter, Sliders, X, Award, Clock, Calendar, Tag } from "lucide-react";
 import { ServiceSkeleton, ServiceSkeletonGrid } from "@/components/services/service-skeleton";
+import { ProviderCard } from "@/components/services/provider-card";
 
 // Define filter types
 type DurationFilterKeys = "under30" | "min30to60" | "min60to90" | "over90";
@@ -89,8 +90,8 @@ export default function ServicesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [durationFilters, setDurationFilters] = useState({
@@ -130,6 +131,9 @@ export default function ServicesPage() {
     "wifi": false,
     "childcare": false
   });
+  
+  // Add a search type toggle for services/providers
+  const [searchType, setSearchType] = useState<"services" | "providers">("services");
   
   // Log state changes for debugging
   useEffect(() => {
@@ -230,16 +234,16 @@ export default function ServicesPage() {
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
     
-    // Update URL query parameters
+    // Update the URL with the view parameter
     const params = new URLSearchParams(searchParams.toString());
-    
     if (mode === "map") {
       params.set("view", "map");
     } else {
       params.delete("view");
     }
     
-    router.push(`/services?${params.toString()}`);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    router.push(newUrl, { scroll: false });
   };
   
   // Handle page change
@@ -705,18 +709,153 @@ export default function ServicesPage() {
     setShowFilters(!showFilters);
   };
 
+  // Add provider filtering logic
+  const filteredProviders = providers.filter(provider => {
+    // Search query filter for provider name or specialty
+    if (searchQuery && searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase();
+      const fullName = `${provider.firstName} ${provider.lastName}`.toLowerCase();
+      const specialties = provider.specialties?.map(s => s.toLowerCase()) || [];
+      const bio = (provider.bio || "").toLowerCase();
+      
+      const matchesQuery = 
+        fullName.includes(query) || 
+        specialties.some(s => s.includes(query)) ||
+        bio.includes(query);
+      
+      if (!matchesQuery) return false;
+    }
+    
+    // Category filter for provider specialties
+    if (selectedCategory !== "all") {
+      const specialties = provider.specialties?.map(s => s.toLowerCase()) || [];
+      if (!specialties.includes(selectedCategory.toLowerCase())) {
+        return false;
+      }
+    }
+    
+    // Location filter
+    if (selectedLocation !== "all") {
+      if (provider.locationId !== selectedLocation) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+  
+  // Sort providers
+  const sortedProviders = [...filteredProviders].sort((a, b) => {
+    switch (sortOption) {
+      case "rating":
+        return (b.rating || 0) - (a.rating || 0);
+      case "mostReviewed":
+        return (b.reviewCount || 0) - (a.reviewCount || 0);
+      case "newest":
+        return new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime();
+      default:
+        return 0; // recommended - no specific sorting
+    }
+  });
+  
+  // Pagination for providers
+  const totalProviderItems = filteredProviders.length;
+  const totalProviderPages = Math.ceil(totalProviderItems / ITEMS_PER_PAGE);
+  const startProviderIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endProviderIndex = Math.min(startProviderIndex + ITEMS_PER_PAGE, totalProviderItems);
+  const paginatedProviders = sortedProviders.slice(startProviderIndex, endProviderIndex);
+  
   return (
-    <div className="container max-w-7xl mx-auto py-12 px-4 sm:px-6">
+    <div className="container max-w-7xl mx-auto py-8 md:py-10 px-4 sm:px-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Find Your Perfect Service</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl font-bold mb-3">Find Your Perfect Service</h1>
+        <p className="text-muted-foreground">
           Browse our curated collection of beauty and wellness services
         </p>
       </div>
       
-      {/* Top Search and Sort Bar */}
-      <div className="card-floating-header flex flex-col md:flex-row gap-4 items-center mb-6">
-        <div className="relative w-full md:w-96">
+      {/* Search type toggle */}
+      <div className="mb-6 flex justify-center">
+        <div className="inline-flex rounded-lg border bg-background p-1">
+          <button
+            onClick={() => {
+              setSearchType("services");
+              setCurrentPage(1); // Reset pagination when switching
+            }}
+            className={`rounded-md px-6 py-2 text-sm font-medium ${
+              searchType === "services" 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Services
+          </button>
+          <button
+            onClick={() => {
+              setSearchType("providers");
+              setCurrentPage(1); // Reset pagination when switching
+            }}
+            className={`rounded-md px-6 py-2 text-sm font-medium ${
+              searchType === "providers" 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Providers
+          </button>
+        </div>
+      </div>
+      
+      {/* Additional Feature Navigation */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-card shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow border">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Services</h2>
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-primary" />
+            </div>
+          </div>
+          <p className="text-muted-foreground mb-4">Find and book beauty and wellness services from top providers in your area.</p>
+          <div className="text-primary font-medium">You are here</div>
+        </div>
+        
+        <div 
+          className="bg-card shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow border cursor-pointer"
+          onClick={() => router.push('/products')}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Shop Products</h2>
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Tag className="h-5 w-5 text-primary" />
+            </div>
+          </div>
+          <p className="text-muted-foreground mb-4">Browse and purchase premium beauty and wellness products.</p>
+          <div className="text-primary font-medium flex items-center">
+            <span>View Products</span>
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </div>
+        </div>
+        
+        <div 
+          className="bg-card shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow border cursor-pointer"
+          onClick={() => router.push('/learning')}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Learning</h2>
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Award className="h-5 w-5 text-primary" />
+            </div>
+          </div>
+          <p className="text-muted-foreground mb-4">Access courses and tutorials from industry experts.</p>
+          <div className="text-primary font-medium flex items-center">
+            <span>Browse Courses</span>
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <input
             type="text"
@@ -779,8 +918,8 @@ export default function ServicesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Filter sidebar - desktop always visible, mobile conditional */}
-        <div className={`${showFilters ? 'fixed inset-0 z-50 bg-black/30 backdrop-blur-sm' : 'hidden'} lg:relative lg:block lg:z-auto lg:bg-transparent transition-all duration-300`}>
-          <div className={`${showFilters ? 'absolute right-0 h-full w-3/4 max-w-xs' : ''} lg:relative lg:w-full lg:max-w-none transition-transform duration-300 ease-in-out`}>
+        <aside className={`${showFilters ? 'fixed inset-0 z-50 bg-black/30 backdrop-blur-sm' : 'hidden'} lg:relative lg:block lg:z-auto lg:bg-transparent transition-all duration-300`}>
+          <div className={`${showFilters ? 'absolute right-0 h-full w-3/4 max-w-xs' : ''} lg:relative lg:w-full lg:max-w-none transition-transform duration-300 ease-in-out bg-background`}>
             <div className="card-modern p-6 h-full lg:h-auto overflow-y-auto max-h-[calc(100vh-2rem)] lg:sticky lg:top-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold flex items-center">
@@ -1188,7 +1327,7 @@ export default function ServicesPage() {
               </button>
             </div>
           </div>
-        </div>
+        </aside>
         
         <div className="lg:col-span-3">
           {/* Applied filters - horizontal display above product list */}
@@ -1235,31 +1374,62 @@ export default function ServicesPage() {
             </div>
           )}
           
-          {/* Services Grid with improved styling */}
+          {/* Services/Providers Grid */}
           {isLoading ? (
             <ServiceSkeletonGrid />
           ) : (
             <>
               <p className="text-sm text-muted-foreground mb-4">
-                Showing {startIndex + 1}-{endIndex} of {totalItems} services
+                Showing {startIndex + 1}-{endIndex} of {totalItems} {searchType}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedServices.length > 0 ? (
-                  paginatedServices.map(service => (
-                    <ServiceCard key={service.id} service={service} />
-                  ))
-                ) : (
-                  <div className="col-span-full py-16 text-center card-modern">
-                    <p className="text-muted-foreground mb-3">No services found matching your criteria.</p>
-                    <button
-                      onClick={clearAllFilters}
-                      className="text-primary hover:underline font-medium"
-                    >
-                      Clear all filters
-                    </button>
-                  </div>
-                )}
-              </div>
+              
+              {viewMode === "list" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+                  {searchType === "services" ? (
+                    paginatedServices.length > 0 ? (
+                      paginatedServices.map(service => (
+                        <ServiceCard key={service.id} service={service} />
+                      ))
+                    ) : (
+                      <div className="col-span-full py-16 text-center card-modern">
+                        <p className="text-muted-foreground mb-3">No services found matching your criteria.</p>
+                        <button
+                          onClick={clearAllFilters}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          Clear all filters
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    paginatedProviders.length > 0 ? (
+                      paginatedProviders.map(provider => (
+                        <ProviderCard key={provider.id} provider={provider} />
+                      ))
+                    ) : (
+                      <div className="col-span-full py-16 text-center card-modern">
+                        <p className="text-muted-foreground mb-3">No providers found matching your criteria.</p>
+                        <button
+                          onClick={clearAllFilters}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          Clear all filters
+                        </button>
+                      </div>
+                    )
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-xl overflow-hidden shadow-md border">
+                  <ServiceMap 
+                    services={searchType === "services" ? paginatedServices : []} 
+                    providers={searchType === "providers" ? paginatedProviders : []}
+                    height="600px"
+                    centerLocation={selectedLocation !== "all" ? selectedLocation : undefined}
+                    zoom={selectedLocation !== "all" ? 9 : 3}
+                  />
+                </div>
+              )}
             </>
           )}
           
