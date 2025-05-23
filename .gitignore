@@ -28,6 +28,13 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+apps/web/.env
+apps/web/.env.local
+apps/mobile/.env
+# Exception for example files
+!.env.example
+!apps/web/.env.example
+!apps/mobile/.env.example
 
 # turbo
 .turbo
