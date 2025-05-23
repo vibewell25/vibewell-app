@@ -442,6 +442,9 @@ importers:
       '@vibewell/types':
         specifier: workspace:*
         version: link:../types
+      axios:
+        specifier: ^1.6.0
+        version: 1.6.0
     devDependencies:
       eslint:
         specifier: ^8.55.0

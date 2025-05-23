@@ -229,11 +229,12 @@ export default function LearningDashboardPage() {
                               View Certificate
                             </Link>
                           ) : (
-                            <button
+                            <Link
+                              href={`/courses/${course.id}/completion`}
                               className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
                             >
                               Get Certificate
-                            </button>
+                            </Link>
                           )}
                         </div>
                       </div>
@@ -248,30 +249,27 @@ export default function LearningDashboardPage() {
             <div>
               <h2 className="text-xl font-semibold mb-4">Recommended For You</h2>
               <CourseGrid 
-                courses={recommendedCourses} 
-                showFilters={false}
+                courses={recommendedCourses}
               />
             </div>
           )}
         </div>
       ) : (
-        <div className="text-center py-16 space-y-6">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-muted mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-              <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
-              <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9" />
-              <path d="M12 3v6" />
+        <div className="text-center py-16">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h2 className="text-2xl font-semibold">No courses yet</h2>
-          <p className="text-muted-foreground">
-            You haven't enrolled in any courses. Browse our catalog to find something you'll love.
+          <h2 className="text-2xl font-semibold mb-2">No courses yet</h2>
+          <p className="text-muted-foreground mb-8">
+            You haven't enrolled in any courses yet. Browse our courses to get started.
           </p>
           <Link
             href="/courses"
             className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
           >
-            Explore Courses
+            Browse Courses
           </Link>
         </div>
       )}

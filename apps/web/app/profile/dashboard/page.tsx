@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RecentBookings } from "@/components/dashboard/recent-bookings";
 import { UpcomingServices } from "@/components/dashboard/upcoming-services";
 import { QuickStats } from "@/components/dashboard/quick-stats";
+import { CertificatesSection } from "@/components/dashboard/certificates-section";
 import { notFound } from "next/navigation";
 import { getCurrentProfile } from "@/lib/supabase/server";
 import { safeProfileData } from "@/lib/utils";
@@ -34,6 +35,11 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <UpcomingServices profile={profile} />
           <RecentBookings profile={profile} />
+        </div>
+        
+        {/* Add Certificates Section */}
+        <div>
+          <CertificatesSection profile={profile} />
         </div>
         
         {/* Add Analytics Dashboard */}

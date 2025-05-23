@@ -15,11 +15,12 @@
   },
   "dependencies": {
     "@prisma/client": "^5.7.0",
-    "@vibewell/types": "workspace:*"
+    "@vibewell/types": "workspace:*",
+    "axios": "^1.6.0"
   },
   "devDependencies": {
     "eslint": "^8.55.0",
     "prisma": "^5.7.0",
     "typescript": "^5.3.3"
   }
-} 
+}
