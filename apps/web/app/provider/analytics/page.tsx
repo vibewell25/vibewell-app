@@ -14,6 +14,17 @@ export const metadata: Metadata = {
   description: "Track your business performance and growth",
 };
 
+// Define the same Metric type as in analytics-overview.tsx
+type TrendType = "up" | "down" | "neutral";
+type FormatterType = "currency" | "percentage";
+interface Metric {
+  value: number | string;
+  change?: number;
+  label: string;
+  trend: TrendType;
+  formatter?: FormatterType;
+}
+
 export default async function ProviderAnalyticsPage() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -149,18 +160,24 @@ export default async function ProviderAnalyticsPage() {
     : 0;
 
   // Prepare overview metrics
-  const overviewMetrics = {
+  const overviewMetrics: {
+    bookings: Metric;
+    revenue: Metric;
+    customers: Metric;
+    completionRate: Metric;
+    rating: Metric;
+  } = {
     bookings: {
       value: currentMonthBookings || 0,
       change: bookingGrowth,
       label: "This Month",
-      trend: bookingGrowth >= 0 ? "up" : "down"
+      trend: (bookingGrowth >= 0 ? "up" : "down")
     },
     revenue: {
       value: currentMonthRevenue,
       change: revenueGrowth,
       label: "This Month",
-      trend: revenueGrowth >= 0 ? "up" : "down",
+      trend: (revenueGrowth >= 0 ? "up" : "down"),
       formatter: "currency"
     },
     customers: {

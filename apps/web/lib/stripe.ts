@@ -1,17 +1,34 @@
 import { loadStripe } from '@stripe/stripe-js';
 import Stripe from 'stripe';
 
-// Initialize Stripe with the public key
-export const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Make sure environment variables are available
+const STRIPE_PUBLIC_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 
-// Initialize Stripe server-side instance
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16', // Use the latest API version
-});
+// For development mode, provide a warning if keys are missing
+if (process.env.NODE_ENV === 'development' && (!STRIPE_PUBLIC_KEY || !STRIPE_SECRET_KEY)) {
+  console.warn('Stripe API keys are missing. Payment features will not work properly.');
+}
+
+// Initialize Stripe with the public key
+export const stripePromise = STRIPE_PUBLIC_KEY 
+  ? loadStripe(STRIPE_PUBLIC_KEY)
+  : null;
+
+// Initialize Stripe server-side instance with a fallback for development
+export const stripe = STRIPE_SECRET_KEY 
+  ? new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: '2025-04-30.basil', // Use the latest API version
+    })
+  : null;
 
 // Create a payment intent
 export async function createPaymentIntent(amount: number, currency: string = 'usd', metadata: any = {}) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized. Check your environment variables.');
+    }
+    
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to cents
       currency,
@@ -34,6 +51,10 @@ export async function createPaymentIntent(amount: number, currency: string = 'us
 // Retrieve a payment intent
 export async function retrievePaymentIntent(id: string) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized. Check your environment variables.');
+    }
+    
     return await stripe.paymentIntents.retrieve(id);
   } catch (error) {
     console.error('Error retrieving payment intent:', error);
@@ -44,6 +65,10 @@ export async function retrievePaymentIntent(id: string) {
 // Create a customer
 export async function createCustomer(email: string, name: string, metadata: any = {}) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized. Check your environment variables.');
+    }
+    
     return await stripe.customers.create({
       email,
       name,
@@ -58,6 +83,10 @@ export async function createCustomer(email: string, name: string, metadata: any 
 // Create a subscription
 export async function createSubscription(customerId: string, priceId: string, metadata: any = {}) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized. Check your environment variables.');
+    }
+    
     return await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
@@ -72,6 +101,10 @@ export async function createSubscription(customerId: string, priceId: string, me
 // Cancel a subscription
 export async function cancelSubscription(subscriptionId: string) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized. Check your environment variables.');
+    }
+    
     return await stripe.subscriptions.cancel(subscriptionId);
   } catch (error) {
     console.error('Error canceling subscription:', error);
@@ -82,6 +115,10 @@ export async function cancelSubscription(subscriptionId: string) {
 // Create a checkout session
 export async function createCheckoutSession(lineItems: any[], successUrl: string, cancelUrl: string, metadata: any = {}) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized. Check your environment variables.');
+    }
+    
     return await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -105,6 +142,10 @@ export async function createSubscriptionCheckoutSession(
   metadata: any = {}
 ) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized. Check your environment variables.');
+    }
+    
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -130,10 +171,18 @@ export async function createSubscriptionCheckoutSession(
 // Webhook handler to process Stripe events
 export async function handleStripeWebhook(rawBody: string, signature: string) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized. Check your environment variables.');
+    }
+    
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      throw new Error('STRIPE_WEBHOOK_SECRET is not set in environment variables.');
+    }
+    
     const event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET
     );
     
     // Handle different event types

@@ -31,7 +31,7 @@ export default function AnalyticsPage() {
   const completionRate = Math.round((completedBookings / totalBookings) * 100);
   
   // Calculate service popularity
-  const serviceFrequency = bookings.reduce((acc, booking) => {
+  const serviceFrequency = bookings.reduce<Record<string, number>>((acc, booking) => {
     const serviceId = booking.serviceId;
     if (!acc[serviceId]) acc[serviceId] = 0;
     acc[serviceId]++;

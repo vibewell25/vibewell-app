@@ -124,7 +124,7 @@ export default async function BookWithProviderPage({ params }: Props) {
               <div>
                 <h3 className="font-medium">{provider.firstName} {provider.lastName}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {provider.specialties?.join(", ") || "Beauty and wellness professional"}
+                  Beauty and wellness professional
                 </p>
               </div>
             </div>

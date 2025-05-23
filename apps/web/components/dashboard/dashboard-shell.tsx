@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Profile } from "@vibewell/types";
+import { Profile, UserRole } from "@vibewell/types";
 
 interface DashboardShellProps {
   profile: Profile;
@@ -44,7 +44,7 @@ export function DashboardShell({ profile, children }: DashboardShellProps) {
               <NavLink href="/profile/settings" label="Account Settings" />
               <NavLink href="/rewards" label="Rewards & Credits" />
               
-              {profile.role === "provider" && (
+              {profile.role === UserRole.PROVIDER && (
                 <>
                   <div className="border-t my-4" />
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Provider Tools</h3>

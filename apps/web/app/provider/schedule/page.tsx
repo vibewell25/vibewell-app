@@ -5,6 +5,26 @@ import { getCurrentProfile } from "@/lib/supabase/server";
 import { BookingStatus, Profile, UserRole } from "@vibewell/types";
 import { ScheduleCalendar } from "@/components/provider/schedule-calendar";
 
+// Define the expected booking type for the calendar
+interface CalendarBooking {
+  id: string;
+  status: BookingStatus;
+  startTime: Date;
+  endTime: Date;
+  price: number;
+  service: {
+    id: string;
+    title: string;
+    duration: number;
+  };
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    displayName?: string;
+  };
+}
+
 export const metadata: Metadata = {
   title: "Schedule | Provider Dashboard | VibeWell",
   description: "Manage your booking schedule and availability",
@@ -18,22 +38,28 @@ export default async function ProviderSchedulePage() {
     notFound();
   }
 
-  // Convert profileData to Profile type
+  // Create a profile with required fields and optional fields with defaults
   const profile: Profile = {
-    ...profileData,
+    id: profileData.id,
+    userId: profileData.userId,
+    email: profileData.email,
+    firstName: profileData.firstName,
+    lastName: profileData.lastName,
     role: profileData.role as UserRole,
     createdAt: new Date(profileData.createdAt),
     updatedAt: new Date(profileData.updatedAt),
-    displayName: profileData.displayName || undefined,
-    bio: profileData.bio || undefined,
-    avatarUrl: profileData.avatarUrl || undefined,
-    phone: profileData.phone || undefined,
-    address: profileData.address || undefined,
-    city: profileData.city || undefined,
-    state: profileData.state || undefined,
-    zipCode: profileData.zipCode || undefined,
-    country: profileData.country || undefined,
   };
+  
+  // Add optional fields if they exist in profileData
+  if ('displayName' in profileData) profile.displayName = profileData.displayName || undefined;
+  if ('bio' in profileData) profile.bio = profileData.bio || undefined;
+  if ('avatarUrl' in profileData) profile.avatarUrl = profileData.avatarUrl || undefined;
+  if ('phone' in profileData) profile.phone = profileData.phone || undefined;
+  if ('address' in profileData) profile.address = profileData.address || undefined;
+  if ('city' in profileData) profile.city = profileData.city || undefined;
+  if ('state' in profileData) profile.state = profileData.state || undefined;
+  if ('zipCode' in profileData) profile.zipCode = profileData.zipCode || undefined;
+  if ('country' in profileData) profile.country = profileData.country || undefined;
 
   // Fetch all provider's active bookings (not cancelled or no-show)
   const { data: bookings } = await supabase
@@ -47,15 +73,31 @@ export default async function ProviderSchedulePage() {
     .not("status", "in", `(${BookingStatus.CANCELLED},${BookingStatus.NO_SHOW})`)
     .order("startTime", { ascending: true });
 
-  // Convert to proper types with dates
-  const formattedBookings = bookings?.map(booking => ({
-    ...booking,
-    status: booking.status as BookingStatus,
-    createdAt: new Date(booking.createdAt),
-    updatedAt: new Date(booking.updatedAt),
-    startTime: new Date(booking.startTime),
-    endTime: new Date(booking.endTime),
-  })) || [];
+  // Convert to proper types with dates and ensure the data matches the expected format
+  const formattedBookings: CalendarBooking[] = bookings?.map(booking => {
+    // Create a properly typed CalendarBooking object
+    const calendarBooking: CalendarBooking = {
+      id: booking.id,
+      status: booking.status as BookingStatus,
+      startTime: new Date(booking.startTime),
+      endTime: new Date(booking.endTime),
+      price: booking.price,
+      service: {
+        id: booking.service.id,
+        title: booking.service.title,
+        duration: booking.service.duration
+      },
+      customer: {
+        id: booking.customer.id,
+        firstName: booking.customer.firstName,
+        lastName: booking.customer.lastName,
+        // Handle null displayName by converting to undefined
+        displayName: booking.customer.displayName || undefined
+      }
+    };
+    
+    return calendarBooking;
+  }) || [];
 
   return (
     <div className="container py-10">

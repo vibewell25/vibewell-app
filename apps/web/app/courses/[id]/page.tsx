@@ -16,7 +16,7 @@ function getCategoryName(category: any): string {
   return '';
 }
 
-export default function CourseDetailPage({ params }: { params: { id: string } }) {
+export default function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [course, setCourse] = useState<any>(null);
@@ -30,11 +30,14 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
+        // Get the resolved params
+        const resolvedParams = await params;
+        
         // This would be an API call in a real application
         await new Promise(resolve => setTimeout(resolve, 500));
         
         // Find the course
-        const foundCourse = courses.find(c => c.id === params.id);
+        const foundCourse = courses.find(c => c.id === resolvedParams.id);
         if (!foundCourse) {
           return notFound();
         }
@@ -56,7 +59,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         
         // Find related courses (same category or same provider)
         const related = courses
-          .filter(c => c.id !== params.id && (c.category === foundCourse.category || c.providerId === foundCourse.providerId))
+          .filter(c => c.id !== resolvedParams.id && (c.category === foundCourse.category || c.providerId === foundCourse.providerId))
           .slice(0, 4);
         setRelatedCourses(related);
       } catch (error) {
@@ -67,7 +70,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
     };
     
     fetchCourseData();
-  }, [params.id]);
+  }, [params]);
   
   const handleEnroll = async () => {
     setIsEnrolling(true);

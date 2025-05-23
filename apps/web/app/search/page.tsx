@@ -23,10 +23,11 @@ export default function AdvancedSearchPage() {
   });
   
   // Get unique locations from services
-  const serviceLocations = [...new Set(servicesWithDetails
-    .filter(s => s.location)
-    .map(s => `${s.location.name}, ${s.location.country}`)
-  )].sort();
+  const locationsSet = new Set(servicesWithDetails
+    .filter(s => s.location !== undefined)
+    .map(s => `${s.location!.name}, ${s.location!.country}`)
+  );
+  const serviceLocations = Array.from(locationsSet).sort();
   
   return (
     <div className="container py-10">

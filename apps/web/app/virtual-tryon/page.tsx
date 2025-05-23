@@ -60,6 +60,94 @@ export default function VirtualTryOnPage() {
         </div>
       </div>
       
+      {/* AI Skin Analysis Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl overflow-hidden mb-10 shadow-md">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-8 flex flex-col justify-center">
+            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary mb-4">
+              NEW FEATURE
+            </div>
+            <h2 className="text-2xl font-bold mb-3">AI Skin Analysis</h2>
+            <p className="text-muted-foreground mb-6">
+              Get personalized skincare recommendations with our advanced AI analysis. 
+              Upload a selfie and receive detailed insights about your skin concerns and the best products for your needs.
+            </p>
+            <ul className="space-y-2 mb-6">
+              <li className="flex items-center">
+                <span className="mr-2 inline-flex items-center justify-center w-5 h-5 bg-primary/20 text-primary rounded-full text-sm">✓</span>
+                <span>Detect dryness, oiliness, and combination skin</span>
+              </li>
+              <li className="flex items-center">
+                <span className="mr-2 inline-flex items-center justify-center w-5 h-5 bg-primary/20 text-primary rounded-full text-sm">✓</span>
+                <span>Identify fine lines, wrinkles and pigmentation</span>
+              </li>
+              <li className="flex items-center">
+                <span className="mr-2 inline-flex items-center justify-center w-5 h-5 bg-primary/20 text-primary rounded-full text-sm">✓</span>
+                <span>Get personalized product recommendations</span>
+              </li>
+              <li className="flex items-center">
+                <span className="mr-2 inline-flex items-center justify-center w-5 h-5 bg-primary/20 text-primary rounded-full text-sm">✓</span>
+                <span>Create a customized skincare routine</span>
+              </li>
+            </ul>
+            <Link href="/virtual-tryon/skin-analysis" className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 self-start inline-flex">
+              Try Skin Analysis
+            </Link>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute -top-6 -bottom-6 -right-6 -left-6 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1624402708118-84feabcf5c77?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=987&q=80')" }}>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20"></div>
+              </div>
+            </div>
+            <div className="relative md:h-full flex justify-center items-center p-8 min-h-[320px]">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 shadow-lg max-w-xs">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="font-semibold">Skin Analysis Report</h3>
+                    <p className="text-xs text-muted-foreground">AI-powered insights</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="bg-background rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium">Hydration Level</span>
+                      <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">Needs Attention</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: '35%' }}></div>
+                    </div>
+                  </div>
+                  <div className="bg-background rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium">Skin Texture</span>
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Good</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div className="bg-green-500 h-1.5 rounded-full" style={{ width: '70%' }}></div>
+                    </div>
+                  </div>
+                  <div className="bg-background rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium">UV Damage</span>
+                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Moderate</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div className="bg-yellow-500 h-1.5 rounded-full" style={{ width: '50%' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* How It Works */}
       <div className="mb-10">
         <h2 className="text-2xl font-bold mb-6">How It Works</h2>
@@ -248,17 +336,16 @@ export default function VirtualTryOnPage() {
             </p>
           </div>
           <div className="border-b border-border pb-4">
-            <h3 className="font-medium mb-2">Which devices are supported?</h3>
+            <h3 className="font-medium mb-2">How does the skin analysis work?</h3>
             <p className="text-muted-foreground">
-              The virtual try-on feature works on most modern smartphones, tablets, and computers with cameras. 
-              For the best experience, we recommend using the latest version of Chrome, Safari, or Firefox on a device with a front-facing camera.
+              Our AI skin analysis uses computer vision to identify various skin characteristics and concerns from your photo.
+              It analyzes factors like texture, tone, hydration, and more to provide personalized recommendations.
             </p>
           </div>
-          <div>
-            <h3 className="font-medium mb-2">Can I try multiple products at once?</h3>
+          <div className="border-b border-border pb-4">
+            <h3 className="font-medium mb-2">Can I use the virtual try-on on a photo instead of live camera?</h3>
             <p className="text-muted-foreground">
-              Yes! You can layer different products to create a complete look. Simply add products one at a time 
-              to see how they work together.
+              Yes, you can upload photos from your device or use your camera in real-time, whichever you prefer.
             </p>
           </div>
         </div>

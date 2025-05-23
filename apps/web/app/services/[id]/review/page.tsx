@@ -45,19 +45,9 @@ export default async function ReviewPage(props: ReviewPageProps) {
 
   // Convert profileData to Profile type
   const profile = {
-    ...profileData,
+    id: profileData.id,
+    userId: profileData.userId,
     role: profileData.role as UserRole,
-    createdAt: new Date(profileData.createdAt),
-    updatedAt: new Date(profileData.updatedAt),
-    displayName: profileData.displayName || undefined,
-    bio: profileData.bio || undefined,
-    avatarUrl: profileData.avatarUrl || undefined,
-    phone: profileData.phone || undefined,
-    address: profileData.address || undefined,
-    city: profileData.city || undefined,
-    state: profileData.state || undefined,
-    zipCode: profileData.zipCode || undefined,
-    country: profileData.country || undefined,
   };
 
   // Fetch service details
@@ -188,7 +178,12 @@ export default async function ReviewPage(props: ReviewPageProps) {
               </div>
             </div>
 
-            <ReviewForm booking={booking} service={service} profile={profile} />
+            <ReviewForm 
+              serviceId={service.id}
+              providerId={service.providerId}
+              bookingId={booking.id}
+              userId={profile.userId}
+            />
           </div>
         </div>
       </div>

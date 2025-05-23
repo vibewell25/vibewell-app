@@ -15,7 +15,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../../services/supabase';
 import { theme } from '../../constants/theme';
-import Button from '../../components/Button';
+import { Button } from '../../components/ui/Button';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 type Service = {

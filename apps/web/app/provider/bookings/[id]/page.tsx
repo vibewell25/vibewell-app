@@ -19,6 +19,21 @@ export async function generateMetadata({ params }: { params: ParamsType }): Prom
   };
 }
 
+// Type guard for checking if profile data has optional fields
+function hasOptionalFields(profile: any): profile is { 
+  displayName: string | null; 
+  bio: string | null;
+  avatarUrl: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zipCode: string | null;
+  country: string | null;
+} {
+  return 'displayName' in profile;
+}
+
 export default async function ProviderBookingDetailsPage({ params }: { params: ParamsType }) {
   const { id } = await params;
   const supabase = await createServerClient();
@@ -34,15 +49,16 @@ export default async function ProviderBookingDetailsPage({ params }: { params: P
     role: profileData.role as UserRole,
     createdAt: new Date(profileData.createdAt),
     updatedAt: new Date(profileData.updatedAt),
-    displayName: profileData.displayName || undefined,
-    bio: profileData.bio || undefined,
-    avatarUrl: profileData.avatarUrl || undefined,
-    phone: profileData.phone || undefined,
-    address: profileData.address || undefined,
-    city: profileData.city || undefined,
-    state: profileData.state || undefined,
-    zipCode: profileData.zipCode || undefined,
-    country: profileData.country || undefined,
+    // Use the type guard to safely access optional fields
+    displayName: hasOptionalFields(profileData) ? (profileData.displayName || undefined) : undefined,
+    bio: hasOptionalFields(profileData) ? (profileData.bio || undefined) : undefined,
+    avatarUrl: hasOptionalFields(profileData) ? (profileData.avatarUrl || undefined) : undefined,
+    phone: hasOptionalFields(profileData) ? (profileData.phone || undefined) : undefined,
+    address: hasOptionalFields(profileData) ? (profileData.address || undefined) : undefined,
+    city: hasOptionalFields(profileData) ? (profileData.city || undefined) : undefined,
+    state: hasOptionalFields(profileData) ? (profileData.state || undefined) : undefined,
+    zipCode: hasOptionalFields(profileData) ? (profileData.zipCode || undefined) : undefined,
+    country: hasOptionalFields(profileData) ? (profileData.country || undefined) : undefined,
   };
 
   // Fetch booking with related service and customer details

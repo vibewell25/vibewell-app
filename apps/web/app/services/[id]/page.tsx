@@ -99,20 +99,6 @@ export default async function ServiceDetailPage({ params }: Props) {
                 {service.description || "No description available for this service."}
               </p>
             </div>
-            
-            {service.details && (
-              <div>
-                <h2 className="text-2xl font-semibold mb-3">Details</h2>
-                <div className="space-y-4">
-                  {service.details.map((detail, index) => (
-                    <div key={index}>
-                      <h3 className="font-medium">{detail.title}</h3>
-                      <p className="text-muted-foreground">{detail.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
         
@@ -169,7 +155,7 @@ export default async function ServiceDetailPage({ params }: Props) {
                   <div>
                     <h4 className="font-medium">{provider.firstName} {provider.lastName}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {provider.specialties?.join(", ") || "Beauty and wellness professional"}
+                      {(provider as any).specialties?.join(", ") || "Beauty and wellness professional"}
                     </p>
                   </div>
                 </div>

@@ -190,20 +190,19 @@ export default function ProviderProfilePage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Years of Experience</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select years of experience" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
+                          <FormControl>
+                            <select
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              {...field}
+                            >
+                              <option value="" disabled>Select years of experience</option>
                               {[...Array(30)].map((_, i) => (
-                                <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                <option key={i + 1} value={(i + 1).toString()}>
                                   {i + 1} {i === 0 ? "year" : "years"}
-                                </SelectItem>
+                                </option>
                               ))}
-                            </SelectContent>
-                          </Select>
+                            </select>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

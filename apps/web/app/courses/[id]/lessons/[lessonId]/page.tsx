@@ -8,10 +8,11 @@ import { courses, lessons, courseEnrollments } from "@/lib/mock-data";
 import { LessonList } from "@/components/courses/lesson-list";
 import { CourseProgress } from "@/components/courses/course-progress";
 
+// Define params as Promise to match Next.js 15 requirements
 export default function LessonPage({ 
   params 
 }: { 
-  params: { id: string; lessonId: string } 
+  params: Promise<{ id: string; lessonId: string }> 
 }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -28,11 +29,14 @@ export default function LessonPage({
   useEffect(() => {
     const fetchLessonData = async () => {
       try {
+        // Get the resolved params
+        const resolvedParams = await params;
+        
         // This would be an API call in a real application
         await new Promise(resolve => setTimeout(resolve, 500));
         
         // Find the course
-        const foundCourse = courses.find(c => c.id === params.id);
+        const foundCourse = courses.find(c => c.id === resolvedParams.id);
         if (!foundCourse) {
           return notFound();
         }
@@ -40,7 +44,7 @@ export default function LessonPage({
         setCourse(foundCourse);
         
         // Find the lesson
-        const foundLesson = lessons.find(l => l.id === params.lessonId && l.courseId === params.id);
+        const foundLesson = lessons.find(l => l.id === resolvedParams.lessonId && l.courseId === resolvedParams.id);
         if (!foundLesson) {
           return notFound();
         }
@@ -48,12 +52,12 @@ export default function LessonPage({
         setLesson(foundLesson);
         
         // Find all lessons for this course
-        const foundLessons = lessons.filter(l => l.courseId === params.id)
+        const foundLessons = lessons.filter(l => l.courseId === resolvedParams.id)
           .sort((a, b) => a.order - b.order);
         setCourseLessons(foundLessons);
         
         // Find next and previous lessons
-        const currentIndex = foundLessons.findIndex(l => l.id === params.lessonId);
+        const currentIndex = foundLessons.findIndex(l => l.id === resolvedParams.lessonId);
         if (currentIndex > 0) {
           setPrevLesson(foundLessons[currentIndex - 1]);
         }
@@ -63,12 +67,12 @@ export default function LessonPage({
         }
         
         // Check enrollment (using mock user id 'c1' for demonstration)
-        const foundEnrollment = courseEnrollments.find(e => e.courseId === params.id && e.userId === 'c1');
+        const foundEnrollment = courseEnrollments.find(e => e.courseId === resolvedParams.id && e.userId === 'c1');
         setIsEnrolled(!!foundEnrollment);
         setEnrollment(foundEnrollment || null);
         
         // Check if this lesson is completed
-        if (foundEnrollment && foundEnrollment.completedLessons.includes(params.lessonId)) {
+        if (foundEnrollment && foundEnrollment.completedLessons.includes(resolvedParams.lessonId)) {
           setLessonCompleted(true);
         }
       } catch (error) {
@@ -79,7 +83,7 @@ export default function LessonPage({
     };
     
     fetchLessonData();
-  }, [params.id, params.lessonId]);
+  }, [params]);
   
   const handleCompleteLesson = async () => {
     if (lessonCompleted) return;

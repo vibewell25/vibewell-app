@@ -62,9 +62,20 @@ const currentUser = {
   avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=600",
 };
 
+// Define an interface for conversation object
+interface Conversation {
+  partner: any;
+  messages: typeof mockMessages;
+}
+
+// Define an interface for the conversations object
+interface Conversations {
+  [partnerId: string]: Conversation;
+}
+
 export default function MessagesPage() {
   // Group messages by conversation partner
-  const conversations = mockMessages.reduce((acc, message) => {
+  const conversations = mockMessages.reduce<Conversations>((acc, message) => {
     const isCurrentUserSender = message.senderId === currentUser.id;
     const partnerId = isCurrentUserSender ? message.recipientId : message.senderId;
     
@@ -89,7 +100,7 @@ export default function MessagesPage() {
   
   // Get the first conversation for the active view
   const activeConversation = sortedConversations.length > 0 ? sortedConversations[0][1] : null;
-  const activeMessages = activeConversation?.messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const activeMessages = activeConversation?.messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()) || [];
 
   return (
     <div className="container py-10">

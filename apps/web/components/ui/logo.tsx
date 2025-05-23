@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { cn } from '@vibewell/utils';
+import { useState } from 'react';
 
 interface LogoProps {
   className?: string;
@@ -13,6 +13,8 @@ export function Logo({
   size = 'medium', 
   variant = 'default' 
 }: LogoProps) {
+  const [imageError, setImageError] = useState(false);
+  
   const sizeClasses = {
     small: 'h-6',
     medium: 'h-8',
@@ -30,21 +32,19 @@ export function Logo({
       href="/" 
       className={cn('flex items-center font-bold', className)}
     >
-      <div className={cn('relative', sizeClasses[size])}>
-        <Image
-          src="/images/logo/vibewell-logo.svg"
-          alt="VibeWell"
-          width={logoSizes[size].width}
-          height={logoSizes[size].height}
-          className="object-contain"
-          priority
-          onError={(e) => {
-            // Fallback to text logo if image fails to load
-            e.currentTarget.style.display = 'none';
-            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-          }}
-        />
-        <div className={cn("hidden flex items-center", sizeClasses[size])}>
+      {!imageError ? (
+        <div className={cn('relative', sizeClasses[size])}>
+          <img
+            src="/images/logo/vibewell-logo.svg"
+            alt="VibeWell"
+            width={logoSizes[size].width}
+            height={logoSizes[size].height}
+            className="object-contain h-full"
+            onError={() => setImageError(true)}
+          />
+        </div>
+      ) : (
+        <div className={cn("flex items-center", sizeClasses[size])}>
           <div className="mr-2 bg-gradient-to-r from-primary to-primary-foreground text-white rounded-full flex items-center justify-center w-8 h-8">
             <span className="text-base">V</span>
           </div>
@@ -52,7 +52,7 @@ export function Logo({
             VibeWell
           </span>
         </div>
-      </div>
+      )}
     </Link>
   );
 } 

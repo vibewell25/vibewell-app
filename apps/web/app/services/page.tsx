@@ -715,12 +715,15 @@ export default function ServicesPage() {
     if (searchQuery && searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase();
       const fullName = `${provider.firstName} ${provider.lastName}`.toLowerCase();
-      const specialties = provider.specialties?.map(s => s.toLowerCase()) || [];
+      // Safely access specialties with type checking
+      const specialties = Array.isArray((provider as any).specialties) 
+        ? (provider as any).specialties.map((s: string) => s.toLowerCase()) 
+        : [];
       const bio = (provider.bio || "").toLowerCase();
       
       const matchesQuery = 
         fullName.includes(query) || 
-        specialties.some(s => s.includes(query)) ||
+        specialties.some((s: string) => s.includes(query)) ||
         bio.includes(query);
       
       if (!matchesQuery) return false;
@@ -728,7 +731,10 @@ export default function ServicesPage() {
     
     // Category filter for provider specialties
     if (selectedCategory !== "all") {
-      const specialties = provider.specialties?.map(s => s.toLowerCase()) || [];
+      // Safely access specialties with type checking
+      const specialties = Array.isArray((provider as any).specialties) 
+        ? (provider as any).specialties.map((s: string) => s.toLowerCase()) 
+        : [];
       if (!specialties.includes(selectedCategory.toLowerCase())) {
         return false;
       }
@@ -736,7 +742,7 @@ export default function ServicesPage() {
     
     // Location filter
     if (selectedLocation !== "all") {
-      if (provider.locationId !== selectedLocation) {
+      if ((provider as any).locationId !== selectedLocation) {
         return false;
       }
     }
@@ -748,11 +754,12 @@ export default function ServicesPage() {
   const sortedProviders = [...filteredProviders].sort((a, b) => {
     switch (sortOption) {
       case "rating":
-        return (b.rating || 0) - (a.rating || 0);
+        return ((b as any).rating || 0) - ((a as any).rating || 0);
       case "mostReviewed":
-        return (b.reviewCount || 0) - (a.reviewCount || 0);
+        return ((b as any).reviewCount || 0) - ((a as any).reviewCount || 0);
       case "newest":
-        return new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime();
+        return new Date((b as any).joinedAt || b.createdAt).getTime() - 
+               new Date((a as any).joinedAt || a.createdAt).getTime();
       default:
         return 0; // recommended - no specific sorting
     }

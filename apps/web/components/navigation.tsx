@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { UserRole } from "@vibewell/types";
 import { Logo } from "./ui/logo";
 import { NotificationsDropdown } from "./notifications/notifications-dropdown";
+import { Bell } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -32,19 +33,35 @@ export function Navigation() {
   };
 
   // Toggle for user menu
-  const toggleUserMenu = () => {
+  const toggleUserMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsUserMenuOpen(!isUserMenuOpen);
   };
 
   // Close user menu when clicking outside
   useEffect(() => {
-    const closeMenu = () => {
-      setIsUserMenuOpen(false);
+    const closeMenu = (e: MouseEvent) => {
+      // Only close if clicking outside user menu elements
+      const target = e.target as Node;
+      const userMenuButton = document.getElementById('user-menu-button');
+      const userMenuDropdown = document.getElementById('user-menu-dropdown');
+      
+      if (
+        userMenuButton && 
+        userMenuDropdown && 
+        !userMenuButton.contains(target) && 
+        !userMenuDropdown.contains(target)
+      ) {
+        setIsUserMenuOpen(false);
+      }
     };
 
-    document.addEventListener("click", closeMenu);
+    if (isUserMenuOpen) {
+      document.addEventListener("click", closeMenu);
+    }
+    
     return () => document.removeEventListener("click", closeMenu);
-  }, []);
+  }, [isUserMenuOpen]);
 
   // Check if a navigation item is active
   const isActive = (path: string) => {
@@ -212,7 +229,7 @@ export function Navigation() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="flex w-full justify-between items-center">
           <div className="flex items-center">
@@ -276,6 +293,7 @@ export function Navigation() {
                 <NotificationsDropdown />
                 
                 <button
+                  id="user-menu-button"
                   type="button"
                   className="flex items-center space-x-2"
                   onClick={toggleUserMenu}
@@ -300,7 +318,7 @@ export function Navigation() {
                 
                 {/* User menu dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-56 rounded-md border bg-background p-1 shadow-md">
+                  <div id="user-menu-dropdown" className="absolute right-0 top-full mt-2 w-56 rounded-md border bg-background p-1 shadow-md z-[100]">
                     <div className="p-2 text-sm font-medium">
                       {profile?.email || user.email || "User"}
                     </div>
@@ -427,7 +445,7 @@ export function Navigation() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden" id="mobile-menu">
+        <div className="md:hidden fixed top-16 left-0 right-0 bg-background border-b z-40 max-h-[calc(100vh-4rem)] overflow-y-auto pb-4" id="mobile-menu">
           <div className="space-y-1 px-4 py-4 pt-2 border-t">
             <Link
               href="/"
@@ -491,7 +509,14 @@ export function Navigation() {
                   {/* Add NotificationsDropdown to mobile menu */}
                   <div className="py-2">
                     <p className="text-sm font-medium mb-2">Notifications</p>
-                    <NotificationsDropdown />
+                    <Link
+                      href="/notifications"
+                      className="flex items-center gap-2 py-2 text-sm font-medium transition-colors hover:text-primary"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Bell className="h-4 w-4" />
+                      View notifications
+                    </Link>
                   </div>
                   
                   <Link

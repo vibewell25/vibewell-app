@@ -20,5 +20,12 @@ export default async function DashboardPage() {
   // Convert API response to match the Profile type using our utility function
   const profile: Profile = safeProfileData(profileData);
 
-  return <DashboardShell profile={profile} />;
+  return (
+    <DashboardShell profile={profile}>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p>Welcome to your VibeWell dashboard.</p>
+      </div>
+    </DashboardShell>
+  );
 } 

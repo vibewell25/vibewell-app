@@ -78,7 +78,7 @@ const CheckoutForm = ({
         // If we have an order ID, update the order status
         if (orderId) {
           const supabase = createClient();
-          await supabase
+          await (supabase as any)
             .from("orders")
             .update({ status: "PAID", paymentIntentId: paymentIntent.id })
             .eq("id", orderId);

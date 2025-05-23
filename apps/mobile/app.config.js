@@ -5,8 +5,9 @@ export default {
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
+  owner: "vibes25",
   splash: {
-    image: './assets/splash.png',
+    image: './assets/splash-icon.png',
     resizeMode: 'contain',
     backgroundColor: '#4CAF50'
   },
@@ -38,11 +39,12 @@ export default {
     sentryDsn: process.env.SENTRY_DSN || '',
     // EAS configuration
     eas: {
-      projectId: process.env.EAS_PROJECT_ID || 'YOUR_EAS_PROJECT_ID'
+      projectId: '11936480-239c-4d92-a8bf-d38b8065d93a'
     }
   },
   plugins: [
-    'expo-font'
+    'expo-font',
+    'sentry-expo'
   ],
   hooks: {
     postPublish: [
@@ -55,5 +57,10 @@ export default {
         }
       }
     ]
+  },
+  doctor: {
+    reactNativeDirectoryCheck: {
+      exclude: ["@vibewell/config", "@vibewell/utils"]
+    }
   }
 }; 

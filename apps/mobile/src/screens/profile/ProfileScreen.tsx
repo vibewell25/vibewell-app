@@ -60,6 +60,20 @@ const settingsOptions: Setting[] = [
     value: false,
   },
   {
+    id: 'healthDashboard',
+    title: 'Health Dashboard',
+    description: 'Track your health metrics and connect wearables',
+    type: 'navigate',
+    screen: 'HealthDashboard',
+  },
+  {
+    id: 'wellnessPlan',
+    title: 'Wellness Plan',
+    description: 'View and manage your personalized wellness goals',
+    type: 'navigate',
+    screen: 'WellnessPlan',
+  },
+  {
     id: 'privacy',
     title: 'Privacy Settings',
     description: 'Manage your data and privacy preferences',
@@ -106,9 +120,8 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleNavigate = (screen: string) => {
-    // This would navigate to the specified screen
-    // For now, just show an alert
-    Alert.alert('Navigation', `Navigating to ${screen}`);
+    // Navigate to the specified screen
+    navigation.navigate(screen);
   };
 
   const handleEditProfile = () => {

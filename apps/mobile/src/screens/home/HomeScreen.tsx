@@ -115,6 +115,39 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
       
+      {/* Add Feature Buttons Section */}
+      <View style={styles.featuresContainer}>
+        <Text style={styles.sectionTitle}>New Features</Text>
+        <View style={styles.featureButtonsRow}>
+          <TouchableOpacity 
+            style={styles.featureButton}
+            onPress={() => navigation.navigate('HealthDashboard')}
+          >
+            <Text style={styles.featureButtonIcon}>❤️</Text>
+            <Text style={styles.featureButtonText}>Health Dashboard</Text>
+            <Text style={styles.featureDescription}>Track metrics & connect wearables</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.featureButton}
+            onPress={() => navigation.navigate('WellnessPlan')}
+          >
+            <Text style={styles.featureButtonIcon}>🎯</Text>
+            <Text style={styles.featureButtonText}>Wellness Plan</Text>
+            <Text style={styles.featureDescription}>Personalized goals & challenges</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.featureButton}
+            onPress={() => navigation.navigate('Community')}
+          >
+            <Text style={styles.featureButtonIcon}>👥</Text>
+            <Text style={styles.featureButtonText}>Community</Text>
+            <Text style={styles.featureDescription}>Enhanced social features</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      
       <View style={styles.providersContainer}>
         {featuredProviders.map((provider) => (
           <TouchableOpacity 
@@ -365,6 +398,40 @@ const styles = StyleSheet.create({
   aiTryOnImage: {
     width: '100%',
     height: '100%',
+  },
+  featuresContainer: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  featureButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  featureButton: {
+    width: '30%',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    alignItems: 'center',
+    ...SHADOWS.small,
+    minHeight: 120,
+  },
+  featureButtonIcon: {
+    fontSize: 24,
+    marginBottom: SPACING.xs,
+  },
+  featureButtonText: {
+    fontSize: FONTS.bodyMedium,
+    color: COLORS.grey800,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  featureDescription: {
+    fontSize: FONTS.bodySmall,
+    color: COLORS.grey600,
+    marginTop: SPACING.xs,
+    textAlign: 'center',
   },
 });
 

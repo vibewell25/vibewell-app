@@ -10,6 +10,18 @@ type Props = {
   params: ParamsType;
 };
 
+// Define a type guard for category
+function isCategoryWithName(category: any): category is { name: string } {
+  return category && typeof category === 'object' && 'name' in category;
+}
+
+// Helper function to get category name safely
+function getCategoryName(category: any): string {
+  if (typeof category === 'string') return category;
+  if (isCategoryWithName(category)) return category.name;
+  return 'Uncategorized';
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const product = products.find(p => p.id === id);
@@ -80,11 +92,7 @@ export default async function ProductDetailPage({ params }: Props) {
           <div className="mb-6">
             {product.category && (
               <div className="text-sm text-primary mb-2">
-                {typeof product.category === 'string' 
-                  ? product.category 
-                  : (product.category && 'name' in product.category) 
-                    ? product.category.name 
-                    : 'Uncategorized'}
+                {getCategoryName(product.category)}
               </div>
             )}
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
@@ -154,11 +162,7 @@ export default async function ProductDetailPage({ params }: Props) {
               <li className="flex gap-2">
                 <span className="text-muted-foreground">Category:</span>
                 <span>
-                  {typeof product.category === 'string' 
-                    ? product.category 
-                    : (product.category && 'name' in product.category) 
-                      ? product.category.name 
-                      : 'Uncategorized'}
+                  {getCategoryName(product.category)}
                 </span>
               </li>
               <li className="flex gap-2">

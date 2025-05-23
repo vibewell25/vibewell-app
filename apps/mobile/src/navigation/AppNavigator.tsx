@@ -21,6 +21,11 @@ import BookingScreen from '../screens/bookings/BookingScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import SocialScreen from '../screens/social/SocialScreen';
 
+// Import new screens
+import HealthDashboardScreen from '../screens/health/HealthDashboardScreen';
+import WellnessPlanScreen from '../screens/wellness/WellnessPlanScreen';
+import EnhancedCommunityScreen from '../screens/social/EnhancedCommunityScreen';
+
 // Import provider screens
 import ProviderProfileScreen from '../screens/provider/ProviderProfileScreen';
 import ServiceManagementScreen from '../screens/provider/ServiceManagementScreen';
@@ -36,6 +41,7 @@ import ChatScreen from '../screens/chat/ChatScreen';
 
 // Import AI screens
 import AIAssistantScreen from '../screens/ai/AIAssistantScreen';
+import SkinAnalysisScreen from '../screens/ai/SkinAnalysisScreen';
 
 // Define the navigators
 const Tab = createBottomTabNavigator();
@@ -50,6 +56,13 @@ function MainStackNavigator() {
       <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: 'Complete Payment' }} />
       <Stack.Screen name="PaymentHistory" component={PaymentHistoryScreen} options={{ title: 'Payment History' }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
+      <Stack.Screen name="AIAssistant" component={AIAssistantScreen} options={{ title: 'AI Wellness Assistant' }} />
+      <Stack.Screen name="SkinAnalysis" component={SkinAnalysisScreen} options={{ title: 'AI Skin Analysis' }} />
+      
+      {/* Add new screens to the main stack */}
+      <Stack.Screen name="HealthDashboard" component={HealthDashboardScreen} options={{ title: 'Health Dashboard' }} />
+      <Stack.Screen name="WellnessPlan" component={WellnessPlanScreen} options={{ title: 'Wellness Plan' }} />
+      <Stack.Screen name="Community" component={EnhancedCommunityScreen} options={{ title: 'Community' }} />
     </Stack.Navigator>
   );
 }
@@ -92,6 +105,7 @@ function ProviderStackNavigator() {
       <Stack.Screen name="ProviderTabs" component={ProviderTabNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="PaymentHistory" component={PaymentHistoryScreen} options={{ title: 'Payment History' }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
+      <Stack.Screen name="SkinAnalysis" component={SkinAnalysisScreen} options={{ title: 'AI Skin Analysis' }} />
     </Stack.Navigator>
   );
 }

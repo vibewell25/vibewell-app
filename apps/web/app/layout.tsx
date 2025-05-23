@@ -1,11 +1,12 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { Navigation } from '@/components/navigation';
 import { Providers } from '@/components/providers';
 import { SupabaseListener } from '@/components/supabase-listener';
 import { Suspense } from 'react';
 import { MobileAppRedirectWrapper } from '@/components/mobile-app-redirect-wrapper';
+import Link from 'next/link';
+import { Header } from '@/components/layout/header';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,9 +27,7 @@ export const metadata: Metadata = {
     'self-care',
   ],
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
+    icon: '/favicon.svg',
   },
 };
 
@@ -42,14 +41,32 @@ export default function RootLayout({
       <body className={`${inter.className} flex min-h-screen flex-col`}>
         <Providers>
           <SupabaseListener />
-          <Navigation />
-          <main className="flex-grow pt-2">
+          <Header />
+          <main className="flex-grow pt-20 pb-10">
             <Suspense fallback={<div className="container py-10">Loading...</div>}>
               <MobileAppRedirectWrapper>
                 {children}
               </MobileAppRedirectWrapper>
             </Suspense>
           </main>
+          <footer className="w-full border-t bg-background py-6">
+            <div className="container flex flex-col items-center justify-between gap-4 px-4 md:flex-row md:px-6">
+              <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                &copy; {new Date().getFullYear()} VibeWell. All rights reserved.
+              </p>
+              <nav className="flex gap-4 sm:gap-6">
+                <Link href="/terms" className="text-sm font-medium hover:underline">
+                  Terms
+                </Link>
+                <Link href="/privacy" className="text-sm font-medium hover:underline">
+                  Privacy
+                </Link>
+                <Link href="/about" className="text-sm font-medium hover:underline">
+                  About
+                </Link>
+              </nav>
+            </div>
+          </footer>
         </Providers>
       </body>
     </html>

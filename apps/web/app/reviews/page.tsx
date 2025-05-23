@@ -54,7 +54,14 @@ const mockReviews = [
 ];
 
 // Calculate average ratings per provider
-const providerRatings = mockReviews.reduce((acc, review) => {
+type ProviderRatings = {
+  [providerId: string]: {
+    totalRating: number;
+    reviewCount: number;
+  }
+};
+
+const providerRatings = mockReviews.reduce<ProviderRatings>((acc, review) => {
   if (review.rating && review.status === "published") {
     if (!acc[review.providerId]) {
       acc[review.providerId] = {
@@ -231,7 +238,7 @@ export default function ReviewsPage() {
                               <Star 
                                 key={star} 
                                 className={`h-5 w-5 ${
-                                  star <= review.rating 
+                                  review.rating && star <= review.rating 
                                     ? 'text-yellow-400 fill-current' 
                                     : 'text-gray-300'
                                 }`} 
@@ -297,8 +304,12 @@ export default function ReviewsPage() {
         <h2 className="text-xl font-bold mb-4">Top Rated Providers</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {providersWithRatings
-            .filter(provider => provider.avgRating)
-            .sort((a, b) => b.avgRating - a.avgRating)
+            .filter(provider => provider.avgRating !== null)
+            .sort((a, b) => {
+              const aRating = a.avgRating ? parseFloat(a.avgRating) : 0;
+              const bRating = b.avgRating ? parseFloat(b.avgRating) : 0;
+              return bRating - aRating;
+            })
             .slice(0, 4)
             .map(provider => (
               <div key={provider.id} className="bg-card rounded-lg shadow overflow-hidden">
@@ -317,7 +328,7 @@ export default function ReviewsPage() {
                             <Star 
                               key={star} 
                               className={`h-4 w-4 ${
-                                star <= Math.round(provider.avgRating) 
+                                provider.avgRating && star <= Math.round(parseFloat(provider.avgRating))
                                   ? 'text-yellow-400 fill-current' 
                                   : 'text-gray-300'
                               }`} 

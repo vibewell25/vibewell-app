@@ -39,12 +39,14 @@ export default function LearningDashboardPage() {
               nextLesson
             }
           };
-        }).filter(Boolean);
+        }).filter(Boolean) as any[];
         
         setEnrolledCourses(userCourses);
         
         // Get user's enrolled course categories
-        const userCourseCategories = userCourses.map(course => course.category);
+        const userCourseCategories = userCourses
+          .map(course => course.category)
+          .filter(Boolean);
         
         // Get recommendations based on enrolled course categories
         // Exclude courses the user is already enrolled in

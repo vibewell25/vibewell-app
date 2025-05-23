@@ -104,7 +104,17 @@ const pointHistory = [
 ];
 
 // Tier thresholds and benefits
-const loyaltyTiers = {
+type TierLevel = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
+
+interface LoyaltyTier {
+  name: string;
+  icon: React.ReactNode;
+  threshold: number;
+  nextThreshold: number | null;
+  benefits: string[];
+}
+
+const loyaltyTiers: Record<TierLevel, LoyaltyTier> = {
   BRONZE: {
     name: "Bronze",
     icon: <Gift className="h-8 w-8 text-amber-700" />,
@@ -137,7 +147,9 @@ const loyaltyTiers = {
 
 export default function RewardsPage() {
   // Get current user's tier info
-  const currentTier = currentUserLoyalty ? loyaltyTiers[currentUserLoyalty.tier] : loyaltyTiers.BRONZE;
+  const currentTier = currentUserLoyalty && currentUserLoyalty.tier in loyaltyTiers 
+    ? loyaltyTiers[currentUserLoyalty.tier as TierLevel] 
+    : loyaltyTiers.BRONZE;
   const nextTier = currentUserLoyalty && currentTier.nextThreshold 
     ? Object.values(loyaltyTiers).find(tier => tier.threshold === currentTier.nextThreshold)
     : null;

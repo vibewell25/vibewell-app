@@ -9,7 +9,7 @@ import { StarRating } from "./star-rating";
 interface ReviewFormProps {
   serviceId: string;
   providerId: string;
-  bookingId?: string;
+  bookingId: string;
   userId: string;
   onSuccess?: () => void;
 }
@@ -43,6 +43,10 @@ export function ReviewForm({
       return;
     }
 
+    if (!bookingId) {
+      throw new Error("Booking ID is required for review submission");
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -59,14 +63,14 @@ export function ReviewForm({
         throw new Error("User profile not found");
       }
       
-      // Submit review - handle bookingId correctly with type conversion
+      // Submit review
       const { error } = await supabase.from("reviews").insert({
         serviceId,
         providerId,
         customerId: profileData.id,
-        bookingId: bookingId || undefined, // Use undefined instead of null
+        bookingId,
         rating,
-        comment: comment.trim() || undefined, // Use undefined instead of null
+        comment: comment.trim() || "",
         isPublic: true,
       });
 
@@ -75,12 +79,10 @@ export function ReviewForm({
       }
 
       // If this is a booking review, mark the booking as having a review
-      if (bookingId) {
-        await supabase
-          .from("bookings")
-          .update({ hasReview: true })
-          .eq("id", bookingId);
-      }
+      await supabase
+        .from("bookings")
+        .update({ hasReview: true })
+        .eq("id", bookingId);
 
       toast.success("Review submitted successfully!");
       
@@ -91,6 +93,9 @@ export function ReviewForm({
       // Callback if provided
       if (onSuccess) {
         onSuccess();
+      } else if (serviceId) {
+        // Redirect to service page if no callback provided
+        router.push(`/services/${serviceId}?success=review_submitted`);
       }
       
       // Refresh page to show new review

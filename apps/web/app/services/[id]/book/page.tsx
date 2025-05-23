@@ -46,20 +46,26 @@ export default async function BookingPage(props: BookingPageProps) {
 
   // Convert profileData to Profile type
   const profile: Profile = {
-    ...profileData,
+    id: profileData.id,
+    userId: profileData.userId,
+    email: profileData.email,
+    firstName: profileData.firstName,
+    lastName: profileData.lastName,
     role: profileData.role as UserRole,
     createdAt: new Date(profileData.createdAt),
     updatedAt: new Date(profileData.updatedAt),
-    displayName: profileData.displayName || undefined,
-    bio: profileData.bio || undefined,
-    avatarUrl: profileData.avatarUrl || undefined,
-    phone: profileData.phone || undefined,
-    address: profileData.address || undefined,
-    city: profileData.city || undefined,
-    state: profileData.state || undefined,
-    zipCode: profileData.zipCode || undefined,
-    country: profileData.country || undefined,
   };
+  
+  // Add optional fields if they exist in profileData
+  if ('displayName' in profileData) profile.displayName = profileData.displayName || undefined;
+  if ('bio' in profileData) profile.bio = profileData.bio || undefined;
+  if ('avatarUrl' in profileData) profile.avatarUrl = profileData.avatarUrl || undefined;
+  if ('phone' in profileData) profile.phone = profileData.phone || undefined;
+  if ('address' in profileData) profile.address = profileData.address || undefined;
+  if ('city' in profileData) profile.city = profileData.city || undefined;
+  if ('state' in profileData) profile.state = profileData.state || undefined;
+  if ('zipCode' in profileData) profile.zipCode = profileData.zipCode || undefined;
+  if ('country' in profileData) profile.country = profileData.country || undefined;
 
   // Redirect if user is a provider (can't book their own services)
   if (profile.role === UserRole.PROVIDER) {

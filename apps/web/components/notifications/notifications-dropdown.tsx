@@ -84,13 +84,17 @@ export function NotificationsDropdown() {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [isOpen]);
 
-  const handleToggleDropdown = () => {
+  const handleToggleDropdown = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsOpen(!isOpen);
   };
 
@@ -187,7 +191,7 @@ export function NotificationsDropdown() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef} onClick={(e) => e.stopPropagation()}>
       <button
         className="relative p-2 rounded-full hover:bg-accent transition-colors"
         onClick={handleToggleDropdown}
@@ -202,7 +206,7 @@ export function NotificationsDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 rounded-md border bg-popover shadow-md z-50">
+        <div className="absolute right-0 mt-2 w-80 rounded-md border bg-popover shadow-md z-[100]">
           <div className="flex items-center justify-between p-4 border-b">
             <h3 className="font-semibold">Notifications</h3>
             {unreadCount > 0 && (

@@ -45,6 +45,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 
+// Define Review interface
+interface ReviewType {
+  id: string;
+  clientId: string;
+  clientName: string;
+  clientAvatar: string;
+  serviceId: string;
+  serviceName: string;
+  rating: number;
+  comment: string;
+  response: string | null;
+  createdAt: Date;
+  respondedAt: Date | null;
+  isPublic: boolean;
+}
+
 // Response form schema
 const responseFormSchema = z.object({
   response: z.string().min(10, {
@@ -57,7 +73,7 @@ const responseFormSchema = z.object({
 type ResponseFormValues = z.infer<typeof responseFormSchema>;
 
 // Mock reviews data - in a real app, this would come from the database
-const mockReviews = [
+const mockReviews: ReviewType[] = [
   {
     id: "r1",
     clientId: "c1",
@@ -130,16 +146,21 @@ const mockReviews = [
   },
 ];
 
+// Define rating distribution interface
+interface RatingDistribution {
+  [key: number]: number;
+}
+
 // Calculate average rating
-const calculateAverageRating = (reviews) => {
+const calculateAverageRating = (reviews: ReviewType[]): number => {
   if (reviews.length === 0) return 0;
   const sum = reviews.reduce((total, review) => total + review.rating, 0);
   return sum / reviews.length;
 };
 
 // Rating distribution
-const getRatingDistribution = (reviews) => {
-  const distribution = {
+const getRatingDistribution = (reviews: ReviewType[]): RatingDistribution => {
+  const distribution: RatingDistribution = {
     5: 0,
     4: 0,
     3: 0,
@@ -155,10 +176,10 @@ const getRatingDistribution = (reviews) => {
 };
 
 export default function ProviderReviewsPage() {
-  const [reviews, setReviews] = useState(mockReviews);
+  const [reviews, setReviews] = useState<ReviewType[]>(mockReviews);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentReview, setCurrentReview] = useState<any>(null);
+  const [currentReview, setCurrentReview] = useState<ReviewType | null>(null);
   const [filterRating, setFilterRating] = useState<number | null>(null);
   const [filterResponded, setFilterResponded] = useState<boolean | null>(null);
   
@@ -193,7 +214,7 @@ export default function ProviderReviewsPage() {
     return true;
   });
   
-  const openResponseDialog = (review) => {
+  const openResponseDialog = (review: ReviewType) => {
     setCurrentReview(review);
     form.reset({
       response: review.response || "",
@@ -246,7 +267,7 @@ export default function ProviderReviewsPage() {
   }
   
   // Generate star rating display
-  const StarRating = ({ rating }) => {
+  const StarRating = ({ rating }: { rating: number }) => {
     return (
       <div className="flex items-center">
         {[...Array(5)].map((_, i) => (
@@ -428,7 +449,7 @@ export default function ProviderReviewsPage() {
                       <p className="text-sm font-medium mb-1">Your Response:</p>
                       <p className="text-sm text-muted-foreground">{review.response}</p>
                       <p className="text-xs text-muted-foreground mt-2">
-                        Responded on {new Date(review.respondedAt).toLocaleDateString()}
+                        Responded on {review.respondedAt instanceof Date ? new Date(review.respondedAt).toLocaleDateString() : 'Unknown date'}
                       </p>
                     </div>
                   )}

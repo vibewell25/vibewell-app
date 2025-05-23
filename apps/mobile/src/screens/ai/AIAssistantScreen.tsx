@@ -91,6 +91,13 @@ const AIAssistantScreen = () => {
           type: 'article',
           action: 'Read Article',
         },
+        {
+          id: 'rec4',
+          title: 'Skin Analysis',
+          description: 'Get a personalized skin analysis and product recommendations.',
+          type: 'article',
+          action: 'Try Now',
+        },
       ];
       
       setMessages([welcomeMessage]);
@@ -155,6 +162,8 @@ const AIAssistantScreen = () => {
       return "Based on your profile and previous bookings, I'd recommend trying a Deep Tissue Massage with Mark Wilson. He has excellent reviews for helping with muscle tension and stress relief.";
     } else if (lowerCaseMessage.includes('thank')) {
       return "You're welcome! Is there anything else I can help you with today?";
+    } else if (lowerCaseMessage.includes('skin') || lowerCaseMessage.includes('face') || lowerCaseMessage.includes('analysis')) {
+      return "I can analyze your skin and provide personalized recommendations. Would you like to try our AI-powered skin analysis tool?";
     } else {
       return "I'm here to help you find the perfect wellness services. You can ask me about specific treatments, providers, or even book appointments. Would you like some personalized recommendations?";
     }
@@ -167,7 +176,11 @@ const AIAssistantScreen = () => {
     } else if (recommendation.type === 'service') {
       alert(`Viewing details for ${recommendation.title}`);
     } else if (recommendation.type === 'article') {
-      alert(`Reading article: ${recommendation.title}`);
+      if (recommendation.title === 'Skin Analysis') {
+        navigation.navigate('SkinAnalysis');
+      } else {
+        alert(`Reading article: ${recommendation.title}`);
+      }
     }
   };
   

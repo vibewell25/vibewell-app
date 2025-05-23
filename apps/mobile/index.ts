@@ -1,8 +1,14 @@
-import { registerRootComponent } from 'expo';
+/**
+ * VibeWell Mobile App
+ * Main entry point
+ */
 
+// Initialize polyfills before anything else
+import './src/utils/node-polyfills';
+
+// Initialize the application
+import { registerRootComponent } from 'expo';
 import App from './App';
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
+// Register the root component
 registerRootComponent(App);

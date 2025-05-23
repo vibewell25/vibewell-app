@@ -306,6 +306,154 @@ export interface Database {
             referencedColumns: ["id"]
           }
         ]
+      },
+      orders: {
+        Row: {
+          id: string
+          customerId: string
+          status: Database['public']['Enums']['OrderStatus']
+          total: number
+          paymentIntentId: string | null
+          notes: string | null
+          createdAt: string
+          updatedAt: string
+        }
+        Insert: {
+          id?: string
+          customerId: string
+          status?: Database['public']['Enums']['OrderStatus']
+          total: number
+          paymentIntentId?: string | null
+          notes?: string | null
+          createdAt?: string
+          updatedAt?: string
+        }
+        Update: {
+          id?: string
+          customerId?: string
+          status?: Database['public']['Enums']['OrderStatus']
+          total?: number
+          paymentIntentId?: string | null
+          notes?: string | null
+          createdAt?: string
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
+      order_items: {
+        Row: {
+          id: string
+          orderId: string
+          productId: string
+          quantity: number
+          price: number
+          createdAt: string
+          updatedAt: string
+        }
+        Insert: {
+          id?: string
+          orderId: string
+          productId: string
+          quantity: number
+          price: number
+          createdAt?: string
+          updatedAt?: string
+        }
+        Update: {
+          id?: string
+          orderId?: string
+          productId?: string
+          quantity?: number
+          price?: number
+          createdAt?: string
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_orderId_fkey"
+            columns: ["orderId"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
+      conversations: {
+        Row: {
+          id: string
+          participants: string[]
+          lastMessageAt: string
+          createdAt: string
+          updatedAt: string
+        }
+        Insert: {
+          id?: string
+          participants: string[]
+          lastMessageAt?: string
+          createdAt?: string
+          updatedAt?: string
+        }
+        Update: {
+          id?: string
+          participants?: string[]
+          lastMessageAt?: string
+          createdAt?: string
+          updatedAt?: string
+        }
+        Relationships: []
+      },
+      messages: {
+        Row: {
+          id: string
+          conversationId: string
+          senderId: string
+          content: string
+          isRead: boolean
+          createdAt: string
+          updatedAt: string
+        }
+        Insert: {
+          id?: string
+          conversationId: string
+          senderId: string
+          content: string
+          isRead?: boolean
+          createdAt?: string
+          updatedAt?: string
+        }
+        Update: {
+          id?: string
+          conversationId?: string
+          senderId?: string
+          content?: string
+          isRead?: boolean
+          createdAt?: string
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversationId_fkey"
+            columns: ["conversationId"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_senderId_fkey"
+            columns: ["senderId"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
@@ -332,4 +480,8 @@ export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Category = Database['public']['Tables']['categories']['Row']
 export type Service = Database['public']['Tables']['services']['Row']
 export type Booking = Database['public']['Tables']['bookings']['Row']
-export type Review = Database['public']['Tables']['reviews']['Row'] 
+export type Review = Database['public']['Tables']['reviews']['Row']
+export type Order = Database['public']['Tables']['orders']['Row']
+export type OrderItem = Database['public']['Tables']['order_items']['Row']
+export type Conversation = Database['public']['Tables']['conversations']['Row']
+export type Message = Database['public']['Tables']['messages']['Row'] 

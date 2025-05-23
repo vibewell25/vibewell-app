@@ -15,7 +15,7 @@ export function ProductGrid({ products, title, showFilters = false }: ProductGri
   const [sortOption, setSortOption] = useState<string>("default");
   
   // Extract unique categories from products
-  const categories = [...new Set(products.map(product => product.category))];
+  const categories = Array.from(new Set(products.map(product => product.category)));
   
   const handleCategoryFilter = (category: string | null) => {
     setActiveCategory(category);
