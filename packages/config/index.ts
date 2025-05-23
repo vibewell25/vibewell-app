@@ -40,10 +40,10 @@ export const navItems = [
 
 // Feature flags
 export const featureFlags = {
-  enableAI: false,
-  enableVirtualTryOn: false,
-  enableCrypto: false,
-  enableVideoConsultation: false,
+  enableAI: true,
+  enableVirtualTryOn: true,
+  enableCrypto: true,
+  enableVideoConsultation: true,
 };
 
 // Service categories

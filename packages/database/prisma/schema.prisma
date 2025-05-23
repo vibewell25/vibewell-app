@@ -53,6 +53,8 @@ enum UserRole {
   ADMIN
   PROVIDER
   CUSTOMER
+  
+  @@schema("public")
 }
 
 // Service Management
@@ -125,6 +127,8 @@ enum BookingStatus {
   COMPLETED
   CANCELLED
   NO_SHOW
+  
+  @@schema("public")
 }
 
 // Review System
@@ -204,16 +208,18 @@ model Product {
 }
 
 model Order {
-  id          String     @id @default(uuid())
-  customerId  String
-  customer    Profile    @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  status      OrderStatus @default(PENDING)
-  total       Decimal    @db.Decimal(10, 2)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id              String      @id @default(uuid())
+  customerId      String
+  customer        Profile     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status          OrderStatus @default(PENDING)
+  total           Decimal     @db.Decimal(10, 2)
+  paymentIntentId String?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   // Relations
-  orderItems  OrderItem[]
+  orderItems      OrderItem[]
 
   @@index([customerId])
   @@map("orders")
@@ -228,6 +234,8 @@ model OrderItem {
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity    Int
   price       Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([orderId])
   @@index([productId])
@@ -242,17 +250,19 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
   REFUNDED
+  
+  @@schema("public")
 }
 
 // Loyalty System
 model LoyaltyPoints {
-  id          String   @id @default(uuid())
-  profileId   String   @unique
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  points      Int      @default(0)
+  id          String      @id @default(uuid())
+  profileId   String      @unique
+  profile     Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  points      Int         @default(0)
   tier        LoyaltyTier @default(BRONZE)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@map("loyalty_points")
   @@schema("public")
@@ -263,6 +273,8 @@ enum LoyaltyTier {
   SILVER
   GOLD
   PLATINUM
+  
+  @@schema("public")
 }
 
 // Messaging System
@@ -270,13 +282,14 @@ model Message {
   id          String   @id @default(uuid())
   senderId    String
   sender      Profile  @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  recipientId String
+  receiverId  String
   content     String
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([senderId])
+  @@index([receiverId])
   @@map("messages")
   @@schema("public")
 } 

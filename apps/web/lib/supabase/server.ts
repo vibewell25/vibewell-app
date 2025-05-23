@@ -1,3 +1,5 @@
+'use server';
+
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import type { Database } from '@/lib/supabase/database.types';
@@ -6,38 +8,9 @@ import type { Database } from '@/lib/supabase/database.types';
  * Create a Supabase client for server components
  * In development, returns a mock client if Supabase credentials are missing
  */
-export const createServerClient = async () => {
-  try {
-    const cookieStore = cookies();
-    return createServerComponentClient<Database>({
-      cookies: () => cookieStore,
-    });
-  } catch (error) {
-    // In development, provide a mock client
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Using mock Supabase server client in development. Authentication features will not work.');
-      
-      // Return a mock client with the same interface
-      return {
-        auth: {
-          getSession: () => Promise.resolve({ data: { session: null } })
-        },
-        from: () => ({
-          select: () => ({
-            eq: () => ({
-              single: () => Promise.resolve({ data: null, error: null })
-            }),
-            match: () => ({
-              single: () => Promise.resolve({ data: null, error: null })
-            })
-          })
-        })
-      } as unknown as ReturnType<typeof createServerComponentClient<Database>>;
-    }
-    
-    // In production, rethrow the error
-    throw error;
-  }
+export const createServerClient = () => {
+  const cookieStore = cookies();
+  return createServerComponentClient<Database>({ cookies: () => cookieStore });
 };
 
 /**

@@ -44,10 +44,15 @@ async function executeSqlDirect(sql) {
       console.log(`\nExecuting statement ${i+1}/${statements.length}:`);
       console.log(stmt.substring(0, 100) + (stmt.length > 100 ? '...' : ''));
       
-      // Try using the REST API
       try {
-        await executeTableCreation(stmt);
-        console.log(`✅ Statement ${i+1} executed successfully`);
+        // Execute SQL directly using Supabase REST API
+        const { error } = await supabase.rpc('exec_sql', { sql: stmt });
+        
+        if (error) {
+          console.error(`❌ Error executing statement ${i+1}:`, error.message);
+        } else {
+          console.log(`✅ Statement ${i+1} executed successfully`);
+        }
       } catch (error) {
         console.error(`❌ Error executing statement ${i+1}:`, error.message);
       }
@@ -60,32 +65,12 @@ async function executeSqlDirect(sql) {
   }
 }
 
-async function executeTableCreation(sql) {
-  console.log('Opening the Supabase dashboard SQL Editor...');
-  console.log('Please manually run the SQL below in the SQL Editor:');
-  console.log('---------------------------------------------');
-  console.log(sql);
-  console.log('---------------------------------------------');
-  
-  return new Promise((resolve) => {
-    // Prompt user to continue after manual execution
-    const readline = require('readline').createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-    
-    readline.question('\nPress Enter after executing the SQL statement in the Supabase dashboard...', () => {
-      readline.close();
-      resolve();
-    });
-  });
-}
-
 async function runMissingTablesMigration() {
   console.log('🚀 Running missing tables migration in Supabase...');
   
   // Read SQL file
-  const missingTablesSql = readSqlFile('migrations/20250522_missing_tables.sql');
+  const sqlFilePath = path.resolve(__dirname, '../../run_all_missing_tables.sql');
+  const missingTablesSql = fs.readFileSync(sqlFilePath, 'utf8');
 
   console.log('\nCreating missing tables and applying RLS policies...');
   await executeSqlDirect(missingTablesSql);
